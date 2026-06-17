@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getPlayerState } from '$lib/stores/playerStore';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	let { onPlayPause, onSeek, onSkipBack, onSkipForward, onSpeedChange } = $props<{
 		onPlayPause?: () => void;
 		onSeek?: (fraction: number) => void;

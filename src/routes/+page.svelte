@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getPlayerState } from '$lib/stores/playerStore';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { onMount } from 'svelte';
 	import { syncProgress } from '$lib/ipc/library';
 	import type { ProgressRecord } from '$lib/types/ipc';

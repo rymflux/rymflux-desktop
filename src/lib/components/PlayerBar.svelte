@@ -3,7 +3,7 @@
 	import PlaybackControls from './PlaybackControls.svelte';
 	import TimeDisplay from './TimeDisplay.svelte';
 	import VolumeSlider from './VolumeSlider.svelte';
-	import { getPlayerState } from '$lib/stores/playerStore';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 
 	let {
 		onPlayPause,

@@ -4,7 +4,7 @@
 	import TimeDisplay from '$lib/components/TimeDisplay.svelte';
 	import VolumeSlider from '$lib/components/VolumeSlider.svelte';
 	import CoverImage from '$lib/components/CoverImage.svelte';
-	import { getPlayerState } from '$lib/stores/playerStore';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { setProgress } from '$lib/ipc/library';
 

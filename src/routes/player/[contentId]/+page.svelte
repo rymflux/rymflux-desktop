@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getBook, addToLibrary } from '$lib/ipc/catalog';
 	import { getProgress } from '$lib/ipc/library';
-	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore';
+	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore.svelte';
 	import DetailView from '$src/domains/audiobook/DetailView.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { onMount } from 'svelte';

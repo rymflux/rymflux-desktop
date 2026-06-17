@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Sidebar from './Sidebar.svelte';
 	import PlayerBar from './PlayerBar.svelte';
-	import { getUiState } from '$lib/stores/uiStore';
+	import { getUiState } from '$lib/stores/uiStore.svelte';
 
 	let {
 		children,

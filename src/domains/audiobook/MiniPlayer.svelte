@@ -1,6 +1,6 @@
 <script lang="ts">
 	import CoverImage from '$lib/components/CoverImage.svelte';
-	import { getPlayerState } from '$lib/stores/playerStore';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 
 	let playerState = getPlayerState();

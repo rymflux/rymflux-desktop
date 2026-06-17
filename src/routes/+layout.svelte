@@ -2,7 +2,7 @@
 	import ShellLayout from '$lib/components/ShellLayout.svelte';
 	import { TauriAudioEngine } from '$lib/ipc/audioEngine';
 	import { setAudioEngine } from '$lib/ipc/engineContext';
-	import { updatePlaybackState, getPlayerState } from '$lib/stores/playerStore';
+	import { updatePlaybackState, getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { setProgress } from '$lib/ipc/library';
 	import { onMount } from 'svelte';
 

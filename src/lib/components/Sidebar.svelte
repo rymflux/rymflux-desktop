@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getUiState } from '$lib/stores/uiStore';
+	import { getUiState } from '$lib/stores/uiStore.svelte';
 	import { page } from '$app/stores';
 
 	let ui = getUiState();
