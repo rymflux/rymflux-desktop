@@ -1,14 +1,14 @@
-name: Desktop CI
+name: CI - Desktop
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   check:
@@ -16,8 +16,23 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      # Both repos checked out as siblings so Cargo.toml's path = "../../rymflux-core" resolves.
+      #
+      #   $GITHUB_WORKSPACE/
+      #     rymflux-core/       ← from rymflux/rymflux-core (public)
+      #     rymflux-desktop/    ← from rymflux/rymflux-desktop (this repo)
 
+      - uses: actions/checkout@v4
+        with:
+          path: rymflux-desktop
+
+      - name: Checkout rymflux-core (sibling for path dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-core
+          path: rymflux-core
+
+      # ── Tauri v2 system dependencies ──
       - name: Install system deps (Tauri v2)
         run: |
           sudo apt-get update
@@ -29,6 +44,7 @@ jobs:
             librsvg2-dev \
             libasound2-dev
 
+      # ── Rust backend ──
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -37,24 +53,21 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
-
-      # ---------- Rust backend ----------
+          workspaces: rymflux-desktop/src-tauri
 
       - name: cargo check
-        working-directory: src-tauri
+        working-directory: rymflux-desktop/src-tauri
         run: cargo check
 
       - name: cargo clippy
-        working-directory: src-tauri
+        working-directory: rymflux-desktop/src-tauri
         run: cargo clippy -- -D warnings
 
       - name: cargo test
-        working-directory: src-tauri
+        working-directory: rymflux-desktop/src-tauri
         run: cargo test
 
-      # ---------- Frontend ----------
-
+      # ── Frontend ──
       - uses: pnpm/action-setup@v4
         with:
           version: latest
@@ -64,12 +77,16 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: rymflux-desktop/pnpm-lock.yaml
 
       - name: pnpm install
+        working-directory: rymflux-desktop
         run: pnpm install --frozen-lockfile
 
       - name: pnpm check (svelte-check)
+        working-directory: rymflux-desktop
         run: pnpm check
 
       - name: pnpm build (vite)
+        working-directory: rymflux-desktop
         run: pnpm build
