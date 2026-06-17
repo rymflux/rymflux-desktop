@@ -9,6 +9,7 @@ use tauri::Emitter;
 use tauri::Manager;
 
 mod commands;
+mod librivox;
 
 #[expect(dead_code, reason = "consumed by Tauri managed state")]
 struct AppState {
@@ -70,6 +71,9 @@ pub fn run() {
             commands::progress_get,
             commands::progress_set,
             commands::progress_sync,
+            commands::catalog_search,
+            commands::catalog_get_book,
+            commands::library_add_from_catalog,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
