@@ -56,7 +56,7 @@ import type { CatalogDetail } from '$lib/types/ipc';
 			? Math.max(0, savedProgress - 3000)
 			: 0;
 		setCurrentTrack(source, params.contentId, book.item.title);
-		engine.play(source, params.contentId, startMs);
+		engine?.play(source, params.contentId, startMs);
 	}
 
 	async function handleAddToLibrary() {

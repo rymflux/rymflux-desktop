@@ -13,7 +13,6 @@
 	let heartbeatHandle = $state<ReturnType<typeof setInterval> | undefined>();
 
 	$effect(() => {
-		// When engine is set, register the context
 		if (engine) {
 			setAudioEngine(engine);
 		}
@@ -44,12 +43,15 @@
 	});
 
 	onMount(() => {
+		// Guard: only init Tauri engine when running inside Tauri
+		const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+		if (!isTauri) return;
+
 		const e = new TauriAudioEngine();
 		engine = e;
 		e.init(
 			(s) => updatePlaybackState(s),
 			() => {
-				// Save final position on finish
 				if (playerState.currentContentId && playerState.currentDomainId) {
 					setProgress(
 						playerState.currentDomainId,
@@ -59,7 +61,7 @@
 				}
 			},
 			(err) => console.error('audio:error', err),
-		);
+		).catch((err) => console.error('audio:init failed', err));
 		return () => {
 			clearInterval(heartbeatHandle);
 			e.destroy();

@@ -6,10 +6,9 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
-	import { setProgress } from '$lib/ipc/library';
+	let engine = getAudioEngine()!;
 
 	let playerState = getPlayerState();
-	let engine = getAudioEngine();
 
 	let sleepTimer = $state<{ endTime: number } | null>(null);
 	let sleepOption = $state<'none' | 15 | 30 | 45 | 60>('none');

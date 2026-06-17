@@ -6,8 +6,9 @@
 	let playerState = getPlayerState();
 	let engine = getAudioEngine();
 
-	function handlePlayPause() {
-		if (!playerState.currentContentId) return;
+	function handlePlayPause(e: Event) {
+		e.preventDefault();
+		if (!engine || !playerState.currentContentId) return;
 		if (playerState.isPlaying) {
 			engine.pause(playerState.currentDomainId, playerState.currentContentId);
 		} else {
@@ -39,7 +40,7 @@
 		<p class="text-xs text-gray-400 truncate mt-0.5">{playerState.currentTitle || 'No title'}</p>
 	</div>
 	<button
-		onclick={(e) => { e.preventDefault(); handlePlayPause(); }}
+		onclick={handlePlayPause}
 		class="p-1.5 rounded-full hover:bg-white/10 transition-colors shrink-0"
 		aria-label={playerState.isPlaying ? 'Pause' : 'Play'}
 	>
