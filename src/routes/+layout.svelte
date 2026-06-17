@@ -1,13 +1,47 @@
 <script lang="ts">
 	import ShellLayout from '$lib/components/ShellLayout.svelte';
 	import { TauriAudioEngine } from '$lib/ipc/audioEngine';
+	import { setAudioEngine } from '$lib/ipc/engineContext';
 	import { updatePlaybackState, getPlayerState } from '$lib/stores/playerStore';
+	import { setProgress } from '$lib/ipc/library';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
 
 	let engine = $state<TauriAudioEngine | null>(null);
 	let playerState = getPlayerState();
+	let heartbeatHandle = $state<ReturnType<typeof setInterval> | undefined>();
+
+	$effect(() => {
+		// When engine is set, register the context
+		if (engine) {
+			setAudioEngine(engine);
+		}
+	});
+
+	// Save progress every 10s during playback
+	$effect(() => {
+		if (playerState.isPlaying && playerState.currentContentId) {
+			clearInterval(heartbeatHandle);
+			heartbeatHandle = setInterval(() => {
+				if (
+					playerState.currentContentId &&
+					playerState.positionMs > 0 &&
+					playerState.currentDomainId
+				) {
+					setProgress(
+						playerState.currentDomainId,
+						playerState.currentContentId,
+						playerState.positionMs,
+					).catch(() => {});
+				}
+			}, 10_000);
+		} else {
+			clearInterval(heartbeatHandle);
+			heartbeatHandle = undefined;
+		}
+		return () => clearInterval(heartbeatHandle);
+	});
 
 	onMount(() => {
 		const e = new TauriAudioEngine();
@@ -15,11 +49,21 @@
 		e.init(
 			(s) => updatePlaybackState(s),
 			() => {
-				/* handle finished */
+				// Save final position on finish
+				if (playerState.currentContentId && playerState.currentDomainId) {
+					setProgress(
+						playerState.currentDomainId,
+						playerState.currentContentId,
+						playerState.positionMs,
+					).catch(() => {});
+				}
 			},
 			(err) => console.error('audio:error', err),
 		);
-		return () => e.destroy();
+		return () => {
+			clearInterval(heartbeatHandle);
+			e.destroy();
+		};
 	});
 
 	function handlePlayPause() {
