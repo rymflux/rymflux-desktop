@@ -1,4 +1,4 @@
-use rymflux_core::types::{PlaybackState};
+use rymflux_core::types::PlaybackState;
 use rymflux_core::storage::StorageEngine;
 use rymflux_core::audio::PlaybackEngine;
 use rymflux_core::error::CoreError;
@@ -10,7 +10,7 @@ use tauri::Manager;
 
 mod commands;
 
-#[expect(dead_code, reason = "wired in step 1.2 — command wrappers consume these fields")]
+#[expect(dead_code, reason = "consumed by Tauri managed state")]
 struct AppState {
     engine: Mutex<PlaybackEngine>,
     storage: Mutex<StorageEngine>,
@@ -57,7 +57,19 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            // Phase 2: register command wrappers here
+            commands::play_audio,
+            commands::pause_audio,
+            commands::seek_audio,
+            commands::set_audio_speed,
+            commands::set_audio_volume,
+            commands::get_audio_state,
+            commands::stop_audio,
+            commands::library_list,
+            commands::library_search,
+            commands::library_get_detail,
+            commands::progress_get,
+            commands::progress_set,
+            commands::progress_sync,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
