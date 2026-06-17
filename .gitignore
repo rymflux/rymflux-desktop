@@ -8,3 +8,6 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+IMPLEMENTATION_JOURNAL.md
+phase2-plan.md
