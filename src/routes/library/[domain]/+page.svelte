@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { listLibrary } from '$lib/ipc/library';
 	import type { ContentItem } from '$lib/types/ipc';
+	import LibraryView from '$src/domains/audiobook/LibraryView.svelte';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	let { params } = $props();
 	let items = $state<ContentItem[]>([]);
@@ -16,26 +18,14 @@
 			loading = false;
 		}
 	});
+
+	function handleSelect(item: ContentItem) {
+		goto(`/player/${item.content_id}`);
+	}
 </script>
 
 <div class="max-w-4xl mx-auto">
-	<h1 class="text-2xl font-bold mb-6 capitalize">{params.domain}</h1>
+	<h1 class="text-2xl font-bold capitalize mb-6">{params.domain}</h1>
 
-	{#if loading}
-		<p class="text-gray-500 text-sm">Loading...</p>
-	{:else if items.length === 0}
-		<p class="text-gray-500 text-sm">Nothing here yet.</p>
-	{:else}
-		<div class="space-y-2">
-			{#each items as item}
-				<a
-					href="/player/{item.content_id}"
-					class="block p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
-				>
-					<h3 class="font-semibold">{item.title || 'Untitled'}</h3>
-					<p class="text-sm text-gray-400">{item.author || 'Unknown author'}</p>
-				</a>
-			{/each}
-		</div>
-	{/if}
+	<LibraryView {items} {loading} domainId={params.domain} onSelect={handleSelect} />
 </div>
