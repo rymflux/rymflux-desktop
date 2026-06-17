@@ -6,6 +6,7 @@ use rymflux_core::EventEmitter;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+#[expect(dead_code, reason = "wired in step 1.2 — command wrappers consume these fields")]
 struct AppState {
     engine: Mutex<PlaybackEngine>,
     storage: Mutex<StorageEngine>,
