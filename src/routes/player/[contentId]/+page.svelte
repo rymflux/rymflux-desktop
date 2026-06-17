@@ -5,11 +5,18 @@
 	import DetailView from '$src/domains/audiobook/DetailView.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { onMount } from 'svelte';
-	import type { CatalogDetail } from '$lib/types/ipc';
+import type { CatalogDetail } from '$lib/types/ipc';
 
 	let { params } = $props();
 	let playerState = getPlayerState();
 	let engine = getAudioEngine();
+
+	// Catalog uses numeric IDs; library stores prefixed (librivox_123)
+	let catalogId = $derived(
+		params.contentId.startsWith('librivox_')
+			? params.contentId.slice('librivox_'.length)
+			: params.contentId,
+	);
 
 	let book = $state<CatalogDetail | null>(null);
 	let savedProgress = $state(0);
@@ -19,7 +26,7 @@
 	onMount(async () => {
 		try {
 			const [b, p] = await Promise.all([
-				getBook(params.contentId),
+				getBook(catalogId),
 				getProgress(params.contentId).catch(() => null),
 			]);
 			book = b;
@@ -30,6 +37,8 @@
 			loading = false;
 		}
 	});
+
+
 
 	function handlePlay(chapterIndex?: number) {
 		if (!book) return;
@@ -54,7 +63,7 @@
 		if (adding) return;
 		adding = true;
 		try {
-			await addToLibrary(params.contentId);
+			await addToLibrary(catalogId);
 		} catch (e) {
 			console.error('add to library failed', e);
 		} finally {

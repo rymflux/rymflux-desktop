@@ -4,6 +4,12 @@ use rymflux_core::storage::StorageEngine;
 use rymflux_core::types::{AudioSource, ContentIdentity, ContentItem, DomainId, PlaybackState, ProgressRecord};
 use std::sync::Mutex;
 
+/// Strip the domain prefix from a content ID to get the raw catalog ID.
+/// e.g. "librivox_123" → "123", plain "123" → "123".
+fn strip_catalog_prefix(id: &str) -> &str {
+	id.strip_prefix("librivox_").unwrap_or(id)
+}
+
 // ── Playback ─────────────────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -204,7 +210,12 @@ impl From<librivox::LibrivoxBook> for CatalogItem {
             description: book.description,
             total_time_secs: book.totaltimesecs,
             num_sections,
-            cover_url: None,
+            cover_url: book.coverart_jpg.clone().or_else(|| {
+                book.url_iarchive.as_ref().and_then(|url| {
+                    let id = url.rsplit('/').next()?;
+                    Some(format!("https://archive.org/services/img/{id}"))
+                })
+            }),
         }
     }
 }
@@ -255,10 +266,10 @@ pub async fn library_add_from_catalog(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     catalog_id: String,
 ) -> Result<(), String> {
-    let book = librivox::get_book(&catalog_id).await?;
-    let domain_id = DomainId::from("librivox");
+    let book = librivox::get_book(strip_catalog_prefix(&catalog_id)).await?;
 
     // Build content item
+    let domain_id = DomainId::from("audiobook");
     let content_item = librivox::book_to_content_item(&book);
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
 

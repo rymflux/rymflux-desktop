@@ -1,6 +1,6 @@
 <script lang="ts">
 	import CoverImage from '$lib/components/CoverImage.svelte';
-	import type { ContentItem } from '$lib/types/ipc';
+import type { DomainItem } from '$lib/types/ipc';
 
 	let {
 		items = [],
@@ -8,9 +8,9 @@
 		onSelect,
 		loading = false,
 	}: {
-		items: ContentItem[];
+		items: DomainItem[];
 		domainId?: string;
-		onSelect?: (item: ContentItem) => void;
+		onSelect?: (item: DomainItem) => void;
 		loading?: boolean;
 	} = $props();
 

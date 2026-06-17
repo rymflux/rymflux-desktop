@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { listLibrary } from '$lib/ipc/library';
-	import type { ContentItem } from '$lib/types/ipc';
+import type { DomainItem } from '$lib/types/ipc';
 	import LibraryView from '$src/domains/audiobook/LibraryView.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	let items = $state<ContentItem[]>([]);
+	let items = $state<DomainItem[]>([]);
 	let loading = $state(true);
 
 	onMount(async () => {
@@ -18,7 +18,7 @@
 		}
 	});
 
-	function handleSelect(item: ContentItem) {
+	function handleSelect(item: DomainItem) {
 		goto(`/player/${item.content_id}`);
 	}
 </script>

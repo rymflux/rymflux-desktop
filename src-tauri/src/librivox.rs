@@ -28,6 +28,9 @@ pub(crate) struct LibrivoxBook {
     // Extended fields (when extended=1)
     pub(crate) url_iarchive: Option<String>,
     pub(crate) sections: Option<Vec<LibrivoxSection>>,
+    // Cover art fields (when coverart=1)
+    pub(crate) coverart_thumbnail: Option<String>,
+    pub(crate) coverart_jpg: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -95,7 +98,7 @@ pub async fn search_by_author(author: &str, limit: u32, offset: u32) -> Result<V
 
 /// Get book details with all sections (chapters).
 pub async fn get_book(id: &str) -> Result<LibrivoxBook, String> {
-    let url = format!("{BASE_URL}/id/{id}?extended=1&format=json");
+    let url = format!("{BASE_URL}/id/{id}?extended=1&coverart=1&format=json");
     let resp = HTTP_CLIENT
         .get(&url)
         .send()
@@ -120,6 +123,15 @@ pub fn book_to_content_item(book: &LibrivoxBook) -> ContentItem {
         .first()
         .map(|a| format!("{} {}", a.first_name, a.last_name))
         .unwrap_or_default();
+    // Derive cover URL: prefer coverart_jpg, fall back to IA thumbnail
+    let cover_url = book.coverart_jpg.clone().or_else(|| {
+        book.url_iarchive
+            .as_ref()
+            .and_then(|url| {
+                let id = url.rsplit('/').next()?;
+                Some(format!("https://archive.org/services/img/{id}"))
+            })
+    });
     let metadata = serde_json::json!({
         "title": book.title,
         "author": author,
@@ -128,10 +140,11 @@ pub fn book_to_content_item(book: &LibrivoxBook) -> ContentItem {
         "librivox_id": book.id,
         "total_time_secs": book.totaltimesecs,
         "num_sections": book.num_sections,
+        "cover_url": cover_url,
     });
     ContentItem {
         id: format!("librivox_{}", book.id),
-        domain_id: DomainId::from("librivox"),
+        domain_id: DomainId::from("audiobook"),
         source_uri: book.url_librivox.clone().unwrap_or_default(),
         metadata_json: Some(metadata),
         content_hash: String::new(),
