@@ -163,6 +163,7 @@ pub fn progress_sync(
 
 use crate::librivox;
 use std::time::SystemTime;
+use crate::archive;
 
 // ── Catalog types (frontend-facing) ─────────────────────────────────────────
 
@@ -181,6 +182,7 @@ pub struct CatalogItem {
 pub struct CatalogDetail {
     pub item: CatalogItem,
     pub sections: Vec<ChapterInfo>,
+    pub archive_identifier: Option<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -231,10 +233,13 @@ pub async fn catalog_search(
     let books = librivox::search_by_title(&query, limit.unwrap_or(20), offset.unwrap_or(0)).await?;
     Ok(books.into_iter().map(|b| b.into()).collect())
 }
-
 #[tauri::command]
 pub async fn catalog_get_book(id: String) -> Result<CatalogDetail, String> {
     let book = librivox::get_book(&id).await?;
+    let archive_identifier = book
+        .url_iarchive
+        .as_deref()
+        .and_then(archive::extract_identifier);
     let sections = book
         .sections
         .as_deref()
@@ -258,6 +263,7 @@ pub async fn catalog_get_book(id: String) -> Result<CatalogDetail, String> {
     Ok(CatalogDetail {
         item: book.into(),
         sections,
+        archive_identifier,
     })
 }
 
@@ -295,5 +301,48 @@ pub async fn library_add_from_catalog(
     // Upsert the content item
     storage.upsert_content(&content_item).map_err(|e| e.to_string())?;
 
+    // Persist archive.org identifier for fallback resolution
+    if let Some(ref url) = book.url_iarchive {
+        if let Some(identifier) = archive::extract_identifier(url) {
+            archive::store_archive_id(&content_item.id, &identifier)?;
+        }
+    }
+
     Ok(())
+}
+
+#[tauri::command]
+pub async fn audiobook_resolve_source(
+    listen_url: String,
+    duration_ms: u64,
+    section_number: u32,
+    archive_identifier: Option<String>,
+) -> Result<AudioSource, String> {
+    if archive::url_is_reachable(&listen_url).await {
+        return Ok(AudioSource {
+            uri: listen_url,
+            duration_ms,
+            mime_type: "audio/mpeg".to_string(),
+        });
+    }
+
+    let identifier = archive_identifier.ok_or_else(|| {
+        "primary stream URL unreachable and no archive.org identifier on record".to_string()
+    })?;
+
+    let fallback_uri = archive::resolve_fallback_stream_url(&identifier, section_number).await?;
+
+    Ok(AudioSource {
+        uri: fallback_uri,
+        duration_ms,
+        mime_type: "audio/mpeg".to_string(),
+    })
+}
+
+#[tauri::command]
+pub async fn audiobook_get_archive_id(
+    _storage_state: tauri::State<'_, Mutex<StorageEngine>>,
+    content_id: String,
+) -> Result<Option<String>, String> {
+    crate::archive::get_archive_id(&content_id).map_err(|e| e.to_string())
 }

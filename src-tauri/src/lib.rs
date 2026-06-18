@@ -10,12 +10,8 @@ use tauri::Manager;
 
 mod commands;
 mod librivox;
+mod archive;
 
-#[expect(dead_code, reason = "consumed by Tauri managed state")]
-struct AppState {
-    engine: Mutex<PlaybackEngine>,
-    storage: Mutex<StorageEngine>,
-}
 
 struct DesktopEventEmitter {
     app_handle: Arc<tauri::AppHandle>,
@@ -50,11 +46,11 @@ pub fn run() {
             }
             let storage = StorageEngine::new(&db_path.to_string_lossy())
                 .expect("failed to open database");
+            storage.run_migrations().expect("failed to run database migrations");
+            archive::init_tables(&db_path).expect("failed to init archive tables");
             let engine = PlaybackEngine::new(event_emitter);
-            app.manage(AppState {
-                engine: Mutex::new(engine),
-                storage: Mutex::new(storage),
-            });
+            app.manage(Mutex::new(engine));
+            app.manage(Mutex::new(storage));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -74,6 +70,8 @@ pub fn run() {
             commands::catalog_search,
             commands::catalog_get_book,
             commands::library_add_from_catalog,
+            commands::audiobook_resolve_source,
+            commands::audiobook_get_archive_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

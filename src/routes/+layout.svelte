@@ -11,7 +11,7 @@
 
 	let engine = $state<TauriAudioEngine | null>(null);
 	let playerState = getPlayerState();
-	let heartbeatHandle = $state<ReturnType<typeof setInterval> | undefined>();
+	let heartbeatHandle: ReturnType<typeof setInterval> | undefined;
 
 	$effect(() => {
 		if (engine) {

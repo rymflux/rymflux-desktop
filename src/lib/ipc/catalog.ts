@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { CatalogItem, CatalogDetail } from '$lib/types/ipc';
+import type { CatalogItem, CatalogDetail, ChapterInfo, AudioSource } from '$lib/types/ipc';
 
 export async function searchCatalog(
 	query: string,
@@ -15,4 +15,16 @@ export async function getBook(id: string): Promise<CatalogDetail> {
 
 export async function addToLibrary(catalogId: string): Promise<void> {
 	return invoke('library_add_from_catalog', { catalogId });
+}
+
+export async function resolveSource(
+	chapter: ChapterInfo,
+	archiveIdentifier: string | null,
+): Promise<AudioSource> {
+	return invoke('audiobook_resolve_source', {
+		listenUrl: chapter.listen_url,
+		durationMs: (chapter.playtime_secs ?? 0) * 1000,
+		sectionNumber: chapter.section_number,
+		archiveIdentifier,
+	});
 }

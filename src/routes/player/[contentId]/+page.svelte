@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getBook, addToLibrary } from '$lib/ipc/catalog';
+	import { getBook, addToLibrary, resolveSource } from '$lib/ipc/catalog';
 	import { getProgress } from '$lib/ipc/library';
 	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore.svelte';
 	import DetailView from '$src/domains/audiobook/DetailView.svelte';
@@ -24,33 +24,26 @@ import type { CatalogDetail } from '$lib/types/ipc';
 	let adding = $state(false);
 
 	onMount(async () => {
-		try {
-			const [b, p] = await Promise.all([
-				getBook(catalogId),
-				getProgress(params.contentId).catch(() => null),
-			]);
-			book = b;
-			if (p) savedProgress = p.position_ms;
-		} catch {
-			// noop
-		} finally {
-			loading = false;
-		}
+		const bPromise = getBook(catalogId).catch((e) => {
+			console.error('getBook failed:', e);
+			return null;
+		});
+		const pPromise = getProgress(params.contentId).catch(() => null);
+		const [b, p] = await Promise.all([bPromise, pPromise]);
+		book = b;
+		if (p) savedProgress = p.position_ms;
+		loading = false;
 	});
 
 
 
-	function handlePlay(chapterIndex?: number) {
+	async function handlePlay(chapterIndex?: number) {
 		if (!book) return;
 		const sections = book.sections;
 		const idx = chapterIndex ?? 0;
 		const section = sections[idx];
 		if (!section) return;
-		const source = {
-			uri: section.listen_url,
-			duration_ms: (section.playtime_secs ?? 0) * 1000,
-			mime_type: 'audio/mpeg',
-		};
+		const source = await resolveSource(section, book.archive_identifier ?? null);
 		// Seek to saved progress with 3s rewind when continuing
 		const startMs = savedProgress > 0 && chapterIndex === undefined
 			? Math.max(0, savedProgress - 3000)

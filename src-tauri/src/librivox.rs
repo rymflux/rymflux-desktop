@@ -1,7 +1,8 @@
-#![allow(dead_code, reason = "serde deserialization fields / step 1.4+ callers")]
+#![allow(dead_code, reason = "serde deserialization fields")]
 use rymflux_core::types::{ContentItem, DomainId};
 use serde::Deserialize;
 use std::sync::LazyLock;
+use std::time::Duration;
 
 // ── API response structs ─────────────────────────────────────────────────────
 
@@ -60,7 +61,13 @@ pub(crate) struct LibrivoxReader {
 
 // ── Shared HTTP client ───────────────────────────────────────────────────────
 
-static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .user_agent("rymflux-audiobook-player/0.1")
+        .timeout(Duration::from_secs(15))
+        .build()
+        .expect("failed to build librivox reqwest client")
+});
 
 const BASE_URL: &str = "https://librivox.org/api/feed/audiobooks";
 
@@ -95,25 +102,23 @@ pub async fn search_by_author(author: &str, limit: u32, offset: u32) -> Result<V
         .map_err(|e| format!("LibriVox parse failed: {e}"))?;
     Ok(data.books)
 }
-
-/// Get book details with all sections (chapters).
 pub async fn get_book(id: &str) -> Result<LibrivoxBook, String> {
-    let url = format!("{BASE_URL}/id/{id}?extended=1&coverart=1&format=json");
+    let url = format!("{BASE_URL}/id/{id}?extended=1&format=json");
     let resp = HTTP_CLIENT
         .get(&url)
         .send()
         .await
         .map_err(|e| format!("LibriVox request failed: {e}"))?;
-    // The extended endpoint returns `{ "books": { … } }` as a single object (not array)
+    // The extended endpoint returns `{ "books": [ { ... } ] }` (single-element array)
     #[derive(Deserialize)]
     struct SingleBookResponse {
-        books: LibrivoxBook,
+        books: Vec<LibrivoxBook>,
     }
-    let data: SingleBookResponse = resp
+    let mut data: SingleBookResponse = resp
         .json()
         .await
         .map_err(|e| format!("LibriVox parse failed: {e}"))?;
-    Ok(data.books)
+    data.books.pop().ok_or_else(|| "no book found in response".to_string())
 }
 
 /// Convert a LibrivoxBook to the domain's ContentItem format.

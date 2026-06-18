@@ -25,4 +25,5 @@ serde_json = "1"
 rymflux-core = { path = "../../rymflux-core" }
 dirs = "6"
 reqwest = { version = "0.13.4", features = ["json"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
 
