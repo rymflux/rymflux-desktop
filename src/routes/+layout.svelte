@@ -4,6 +4,7 @@
 	import { setAudioEngine } from '$lib/ipc/engineContext';
 	import { updatePlaybackState, getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { setProgress } from '$lib/ipc/library';
+	import '../app.css';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
