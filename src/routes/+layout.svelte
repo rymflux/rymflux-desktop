@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
 	import ShellLayout from '$lib/components/ShellLayout.svelte';
 	import { TauriAudioEngine } from '$lib/ipc/audioEngine';
 	import { setAudioEngine } from '$lib/ipc/engineContext';
@@ -165,5 +166,7 @@
 	onSpeedChange={handleSpeedChange}
 	onVolumeChange={handleVolumeChange}
 >
-	{@render children()}
+	<ErrorBoundary>
+		{@render children()}
+	</ErrorBoundary>
 </ShellLayout>
