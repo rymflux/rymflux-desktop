@@ -12,6 +12,7 @@
 	let engine = $state<TauriAudioEngine | null>(null);
 	let playerState = getPlayerState();
 	let heartbeatHandle: ReturnType<typeof setInterval> | undefined;
+	let prevVolume = $state<number>(1.0); // for mute toggle
 
 	$effect(() => {
 		if (engine) {
@@ -44,28 +45,80 @@
 	});
 
 	onMount(() => {
+		// Keyboard shortcuts for playback control
+		function handleKeyDown(e: KeyboardEvent) {
+			// Don't intercept when user is typing in an input or textarea
+			const tag = (e.target as HTMLElement)?.tagName;
+			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+			// Only handle shortcuts when audio engine exists
+			if (!engine) return;
+
+			switch (e.key) {
+				case ' ':
+					e.preventDefault();
+					handlePlayPause();
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					handleSkipBack();
+					break;
+				case 'ArrowRight':
+					e.preventDefault();
+					handleSkipForward();
+					break;
+				case '=':
+				case '+':
+					handleVolumeChange(Math.min(1.0, playerState.volume + 0.1));
+					break;
+				case '-':
+				case '_':
+					handleVolumeChange(Math.max(0.0, playerState.volume - 0.1));
+					break;
+				case 'm':
+				case 'M':
+					if (playerState.volume > 0) {
+						prevVolume = playerState.volume;
+						handleVolumeChange(0);
+					} else {
+						handleVolumeChange(prevVolume);
+					}
+					break;
+				case '[':
+					handleSpeedChange(Math.max(0.5, playerState.speed - 0.05));
+					break;
+				case ']':
+					handleSpeedChange(Math.min(3.0, playerState.speed + 0.05));
+					break;
+			}
+		}
+
+		window.addEventListener('keydown', handleKeyDown);
+
 		// Guard: only init Tauri engine when running inside Tauri
 		const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-		if (!isTauri) return;
+		if (isTauri) {
+			const e = new TauriAudioEngine();
+			engine = e;
+			e.init(
+				(s) => updatePlaybackState(s),
+				() => {
+					if (playerState.currentContentId && playerState.currentDomainId) {
+						setProgress(
+							playerState.currentDomainId,
+							playerState.currentContentId,
+							playerState.positionMs,
+						).catch(() => {});
+					}
+				},
+				(err) => console.error('audio:error', err),
+			).catch((err) => console.error('audio:init failed', err));
+		}
 
-		const e = new TauriAudioEngine();
-		engine = e;
-		e.init(
-			(s) => updatePlaybackState(s),
-			() => {
-				if (playerState.currentContentId && playerState.currentDomainId) {
-					setProgress(
-						playerState.currentDomainId,
-						playerState.currentContentId,
-						playerState.positionMs,
-					).catch(() => {});
-				}
-			},
-			(err) => console.error('audio:error', err),
-		).catch((err) => console.error('audio:init failed', err));
 		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
 			clearInterval(heartbeatHandle);
-			e.destroy();
+			engine?.destroy();
 		};
 	});
 
