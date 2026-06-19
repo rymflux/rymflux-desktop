@@ -1,45 +1,39 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { type Snippet } from 'svelte';
 
 	let {
 		children,
 		fallback,
 		onError,
 	}: {
-		children: import('svelte').Snippet;
-		fallback?: import('svelte').Snippet<[error: Error]>;
-		onError?: (error: Error) => void;
+		children: Snippet;
+		fallback?: Snippet<[error: unknown, reset: () => void]>;
+		onError?: (error: unknown, reset: () => void) => void;
 	} = $props();
 
-	let error = $state<Error | null>(null);
-	let errorKey = $state(0);
-	let element: HTMLDivElement | undefined = $state();
+	let error = $state<unknown>(null);
+	let resetFn: (() => void) | null = null;
 
-	function handleWindowError(e: ErrorEvent) {
-		// Only catch errors that originated from within this boundary's subtree
-		if (element && e.target && element.contains(e.target as Node)) {
-			e.preventDefault();
-			e.stopPropagation();
-			error = e.error instanceof Error ? e.error : new Error(e.message || 'Unknown error');
-			onError?.(error);
-		}
+	/** The <svelte:boundary> `onerror` callback — captures error and stores reset for retry. */
+	function handleBoundaryError(e: unknown, reset: () => void) {
+		error = e;
+		resetFn = reset;
+		onError?.(e, reset);
 	}
 
-	onMount(() => {
-		window.addEventListener('error', handleWindowError, true);
-		return () => window.removeEventListener('error', handleWindowError, true);
-	});
-
+	/** Clear the error and re-activate the boundary to retry children. */
 	function handleRetry() {
+		const r = resetFn;
 		error = null;
-		errorKey += 1;
+		resetFn = null;
+		r?.(); // Re-activate boundary — creates a fresh main effect for children
 	}
 </script>
 
-<div bind:this={element} class="contents">
+<svelte:boundary onerror={handleBoundaryError}>
 	{#if error}
 		{#if fallback}
-			{@render fallback(error)}
+			{@render fallback(error, handleRetry)}
 		{:else}
 			<div class="flex flex-col items-center justify-center py-12 px-4 text-center">
 				<div class="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mb-4">
@@ -48,7 +42,7 @@
 					</svg>
 				</div>
 				<p class="text-gray-300 font-medium">Something went wrong</p>
-				<p class="text-gray-500 text-sm mt-1 max-w-md">{error.message || 'An unexpected error occurred'}</p>
+				<p class="text-gray-500 text-sm mt-1 max-w-md">{String(error)}</p>
 				<button
 					onclick={handleRetry}
 					class="mt-4 px-4 py-2 bg-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/20 transition-colors"
@@ -58,8 +52,6 @@
 			</div>
 		{/if}
 	{:else}
-		{#key errorKey}
-			{@render children()}
-		{/key}
+		{@render children()}
 	{/if}
-</div>
+</svelte:boundary>
