@@ -31,6 +31,7 @@ impl EventEmitter for DesktopEventEmitter {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    rymflux_core::init_logging();
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
