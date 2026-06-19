@@ -98,6 +98,15 @@ pub fn stop_audio(
 // ── Library ──────────────────────────────────────────────────────────────────
 
 #[tauri::command]
+pub fn library_remove_from(
+    storage_state: tauri::State<'_, Mutex<StorageEngine>>,
+    content_id: String,
+) -> Result<(), String> {
+    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+    storage.delete_content(&content_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn library_list(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,

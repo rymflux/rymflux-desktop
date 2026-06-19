@@ -35,6 +35,19 @@ export async function searchLibrary(
 	return toDomainItems(raw as unknown[]);
 }
 
+export async function removeFromLibrary(contentId: string): Promise<void> {
+	return invoke('library_remove_from', { contentId });
+}
+
+/** Check whether a content item exists in the library. Returns null if not found. */
+export async function getLibraryDetail(contentId: string): Promise<ContentItem | null> {
+	try {
+		return (await invoke('library_get_detail', { contentId })) as ContentItem;
+	} catch {
+		return null;
+	}
+}
+
 export async function getProgress(contentId: string): Promise<ProgressRecord> {
 	return invoke('progress_get', { contentId });
 }

@@ -9,7 +9,9 @@
 		savedProgress = 0,
 		onPlay,
 		onAddToLibrary,
+		onRemoveFromLibrary,
 		adding = false,
+		isInLibrary = false,
 		hideAddButton = false,
 		hideChapters = false,
 	}: {
@@ -18,7 +20,9 @@
 		savedProgress?: number;
 		onPlay?: (chapterIndex?: number) => void;
 		onAddToLibrary?: () => void;
+		onRemoveFromLibrary?: () => void;
 		adding?: boolean;
+		isInLibrary?: boolean;
 		hideAddButton?: boolean;
 		hideChapters?: boolean;
 	} = $props();
@@ -43,13 +47,22 @@
 				{savedProgress > 0 ? 'Continue' : 'Play'}
 			</button>
 			{#if !hideAddButton}
-				<button
-					onclick={() => onAddToLibrary?.()}
-					disabled={adding}
-					class="px-5 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
-				>
-					{adding ? 'Adding…' : 'Add to Library'}
-				</button>
+				{#if isInLibrary}
+					<button
+						onclick={() => onRemoveFromLibrary?.()}
+						class="px-5 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors border border-red-600/30"
+					>
+						Remove from Library
+					</button>
+				{:else}
+					<button
+						onclick={() => onAddToLibrary?.()}
+						disabled={adding}
+						class="px-5 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
+					>
+						{adding ? 'Adding…' : 'Add to Library'}
+					</button>
+				{/if}
 			{/if}
 		</div>
 

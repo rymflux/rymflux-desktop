@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getBook, addToLibrary, resolveSource } from '$lib/ipc/catalog';
-	import { getProgress } from '$lib/ipc/library';
+	import { getProgress, getLibraryDetail, removeFromLibrary } from '$lib/ipc/library';
 	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore.svelte';
 	import DetailView from '$src/domains/audiobook/DetailView.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
@@ -22,6 +22,7 @@ import type { CatalogDetail } from '$lib/types/ipc';
 	let savedProgress = $state(0);
 	let loading = $state(true);
 	let adding = $state(false);
+	let isInLibrary = $state(false);
 
 	onMount(async () => {
 		const bPromise = getBook(catalogId).catch((e) => {
@@ -29,9 +30,11 @@ import type { CatalogDetail } from '$lib/types/ipc';
 			return null;
 		});
 		const pPromise = getProgress(params.contentId).catch(() => null);
-		const [b, p] = await Promise.all([bPromise, pPromise]);
+		const lPromise = getLibraryDetail(params.contentId).then((item) => item !== null);
+		const [b, p, inLib] = await Promise.all([bPromise, pPromise, lPromise]);
 		book = b;
 		if (p) savedProgress = p.position_ms;
+		isInLibrary = inLib;
 		loading = false;
 	});
 
@@ -57,10 +60,20 @@ import type { CatalogDetail } from '$lib/types/ipc';
 		adding = true;
 		try {
 			await addToLibrary(catalogId);
+			isInLibrary = true;
 		} catch (e) {
 			console.error('add to library failed', e);
 		} finally {
 			adding = false;
+		}
+	}
+
+	async function handleRemoveFromLibrary() {
+		try {
+			await removeFromLibrary(params.contentId);
+			isInLibrary = false;
+		} catch (e) {
+			console.error('remove from library failed', e);
 		}
 	}
 </script>
@@ -77,7 +90,9 @@ import type { CatalogDetail } from '$lib/types/ipc';
 			{savedProgress}
 			onPlay={handlePlay}
 			onAddToLibrary={handleAddToLibrary}
+			onRemoveFromLibrary={handleRemoveFromLibrary}
 			{adding}
+			{isInLibrary}
 		/>
 	{:else}
 		<div class="text-center py-12">
