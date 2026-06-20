@@ -3,10 +3,11 @@ import type { CatalogItem, CatalogDetail, ChapterInfo, AudioSource } from '$lib/
 
 export async function searchCatalog(
 	query: string,
+	searchType?: 'title' | 'author',
 	limit?: number,
 	offset?: number,
 ): Promise<CatalogItem[]> {
-	return invoke('catalog_search', { query, limit, offset });
+	return invoke('catalog_search', { query, searchType, limit, offset });
 }
 
 export async function getBook(id: string): Promise<CatalogDetail> {

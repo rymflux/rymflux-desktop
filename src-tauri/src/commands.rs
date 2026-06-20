@@ -254,10 +254,18 @@ impl From<librivox::LibrivoxBook> for CatalogItem {
 #[tauri::command]
 pub async fn catalog_search(
     query: String,
+    search_type: Option<String>,
     limit: Option<u32>,
     offset: Option<u32>,
 ) -> Result<Vec<CatalogItem>, String> {
-    let books = librivox::search_by_title(&query, limit.unwrap_or(20), offset.unwrap_or(0)).await?;
+    let limit = limit.unwrap_or(20);
+    let offset = offset.unwrap_or(0);
+    let use_author = search_type.as_deref() == Some("author");
+    let books = if use_author {
+        librivox::search_by_author(&query, limit, offset).await?
+    } else {
+        librivox::search_by_title(&query, limit, offset).await?
+    };
     Ok(books.into_iter().map(|b| b.into()).collect())
 }
 #[tauri::command]
