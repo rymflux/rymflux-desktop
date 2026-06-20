@@ -1,13 +1,16 @@
-use rymflux_core::commands;
 use rymflux_core::audio::PlaybackEngine;
+use rymflux_core::commands;
 use rymflux_core::storage::StorageEngine;
-use rymflux_core::types::{AudioSource, ContentIdentity, ContentItem, DomainId, DomainRecord, PlaybackState, ProgressRecord};
+use rymflux_core::types::{
+    AudioSource, ContentIdentity, ContentItem, DomainId, DomainRecord, PlaybackState,
+    ProgressRecord,
+};
 use std::sync::Mutex;
 
 /// Strip the domain prefix from a content ID to get the raw catalog ID.
 /// e.g. "librivox_123" → "123", plain "123" → "123".
 fn strip_catalog_prefix(id: &str) -> &str {
-	id.strip_prefix("librivox_").unwrap_or(id)
+    id.strip_prefix("librivox_").unwrap_or(id)
 }
 
 // ── Playback ─────────────────────────────────────────────────────────────────
@@ -91,8 +94,7 @@ pub fn stop_audio(
     let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
-    commands::playback::stop(&storage, &mut engine, &domain, &content_id)
-        .map_err(|e| e.to_string())
+    commands::playback::stop(&storage, &mut engine, &domain, &content_id).map_err(|e| e.to_string())
 }
 
 // ── Library ──────────────────────────────────────────────────────────────────
@@ -103,7 +105,9 @@ pub fn library_remove_from(
     content_id: String,
 ) -> Result<(), String> {
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-    storage.delete_content(&content_id).map_err(|e| e.to_string())
+    storage
+        .delete_content(&content_id)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -174,8 +178,7 @@ pub fn progress_set(
 ) -> Result<(), String> {
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
-    commands::progress::set(&storage, &domain, &content_id, position_ms)
-        .map_err(|e| e.to_string())
+    commands::progress::set(&storage, &domain, &content_id, position_ms).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -188,9 +191,9 @@ pub fn progress_sync(
     commands::progress::sync(&storage, &domain).map_err(|e| e.to_string())
 }
 
+use crate::archive;
 use crate::librivox;
 use std::time::SystemTime;
-use crate::archive;
 
 // ── Catalog types (frontend-facing) ─────────────────────────────────────────
 
@@ -228,10 +231,7 @@ impl From<librivox::LibrivoxBook> for CatalogItem {
             .first()
             .map(|a| format!("{} {}", a.first_name, a.last_name))
             .unwrap_or_default();
-        let num_sections = book
-            .num_sections
-            .as_deref()
-            .and_then(|s| s.parse().ok());
+        let num_sections = book.num_sections.as_deref().and_then(|s| s.parse().ok());
         CatalogItem {
             id: book.id,
             title: book.title,
@@ -282,10 +282,7 @@ pub async fn catalog_get_book(id: String) -> Result<CatalogDetail, String> {
         .iter()
         .map(|s| {
             let sec_num: u32 = s.section_number.parse().unwrap_or(0);
-            let playtime_secs = s
-                .playtime
-                .as_deref()
-                .and_then(|p| p.parse().ok());
+            let playtime_secs = s.playtime.as_deref().and_then(|p| p.parse().ok());
             ChapterInfo {
                 id: s.id.clone(),
                 section_number: sec_num,
@@ -331,10 +328,14 @@ pub async fn library_add_from_catalog(
         first_seen_at: now.to_string(),
         last_seen_at: now.to_string(),
     };
-    storage.store_identity(&identity).map_err(|e| e.to_string())?;
+    storage
+        .store_identity(&identity)
+        .map_err(|e| e.to_string())?;
 
     // Upsert the content item
-    storage.upsert_content(&content_item).map_err(|e| e.to_string())?;
+    storage
+        .upsert_content(&content_item)
+        .map_err(|e| e.to_string())?;
 
     // Persist archive.org identifier for fallback resolution
     if let Some(ref url) = book.url_iarchive {

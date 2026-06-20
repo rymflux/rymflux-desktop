@@ -1,17 +1,16 @@
-use rymflux_core::types::PlaybackState;
-use rymflux_core::storage::StorageEngine;
 use rymflux_core::audio::PlaybackEngine;
 use rymflux_core::error::CoreError;
+use rymflux_core::storage::StorageEngine;
+use rymflux_core::types::PlaybackState;
 use rymflux_core::EventEmitter;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
 
+mod archive;
 mod commands;
 mod librivox;
-mod archive;
-
 
 struct DesktopEventEmitter {
     app_handle: Arc<tauri::AppHandle>,
@@ -45,9 +44,11 @@ pub fn run() {
             if let Some(parent) = db_path.parent() {
                 std::fs::create_dir_all(parent).ok();
             }
-            let storage = StorageEngine::new(&db_path.to_string_lossy())
-                .expect("failed to open database");
-            storage.run_migrations().expect("failed to run database migrations");
+            let storage =
+                StorageEngine::new(&db_path.to_string_lossy()).expect("failed to open database");
+            storage
+                .run_migrations()
+                .expect("failed to run database migrations");
             archive::init_tables(&db_path).expect("failed to init archive tables");
             let engine = PlaybackEngine::new(event_emitter);
             app.manage(Mutex::new(engine));

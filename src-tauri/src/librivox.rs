@@ -48,7 +48,7 @@ pub(crate) struct LibrivoxSection {
     pub(crate) section_number: String,
     pub(crate) title: String,
     pub(crate) listen_url: String,
-    pub(crate) playtime: Option<String>,  // seconds as string
+    pub(crate) playtime: Option<String>, // seconds as string
     pub(crate) language: Option<String>,
     pub(crate) readers: Vec<LibrivoxReader>,
 }
@@ -74,7 +74,11 @@ const BASE_URL: &str = "https://librivox.org/api/feed/audiobooks";
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /// Search by title (uses `^` prefix for anchored search).
-pub async fn search_by_title(query: &str, limit: u32, offset: u32) -> Result<Vec<LibrivoxBook>, String> {
+pub async fn search_by_title(
+    query: &str,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<LibrivoxBook>, String> {
     let url = format!("{BASE_URL}?title=%5E{query}&format=json&limit={limit}&offset={offset}");
     let resp = HTTP_CLIENT
         .get(&url)
@@ -89,7 +93,11 @@ pub async fn search_by_title(query: &str, limit: u32, offset: u32) -> Result<Vec
 }
 
 /// Search by author last name.
-pub async fn search_by_author(author: &str, limit: u32, offset: u32) -> Result<Vec<LibrivoxBook>, String> {
+pub async fn search_by_author(
+    author: &str,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<LibrivoxBook>, String> {
     let url = format!("{BASE_URL}?author={author}&format=json&limit={limit}&offset={offset}");
     let resp = HTTP_CLIENT
         .get(&url)
@@ -118,7 +126,9 @@ pub async fn get_book(id: &str) -> Result<LibrivoxBook, String> {
         .json()
         .await
         .map_err(|e| format!("LibriVox parse failed: {e}"))?;
-    data.books.pop().ok_or_else(|| "no book found in response".to_string())
+    data.books
+        .pop()
+        .ok_or_else(|| "no book found in response".to_string())
 }
 
 /// Convert a LibrivoxBook to the domain's ContentItem format.
@@ -130,12 +140,10 @@ pub fn book_to_content_item(book: &LibrivoxBook) -> ContentItem {
         .unwrap_or_default();
     // Derive cover URL: prefer coverart_jpg, fall back to IA thumbnail
     let cover_url = book.coverart_jpg.clone().or_else(|| {
-        book.url_iarchive
-            .as_ref()
-            .and_then(|url| {
-                let id = url.rsplit('/').next()?;
-                Some(format!("https://archive.org/services/img/{id}"))
-            })
+        book.url_iarchive.as_ref().and_then(|url| {
+            let id = url.rsplit('/').next()?;
+            Some(format!("https://archive.org/services/img/{id}"))
+        })
     });
     let metadata = serde_json::json!({
         "title": book.title,

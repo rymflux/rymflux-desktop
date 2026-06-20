@@ -106,9 +106,7 @@ pub async fn resolve_fallback_stream_url(
         .get(section_number.saturating_sub(1) as usize)
         .map(|f| build_download_url(identifier, &f.name))
         .ok_or_else(|| {
-            format!(
-                "no mp3 file found for section {section_number} in item {identifier}"
-            )
+            format!("no mp3 file found for section {section_number} in item {identifier}")
         })
 }
 
