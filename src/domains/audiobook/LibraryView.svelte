@@ -17,6 +17,8 @@ import type { DomainItem } from '$lib/types/ipc';
 	let viewMode = $state<'grid' | 'list'>('grid');
 	let searchQuery = $state('');
 	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+	let sortField = $state<'title' | 'author' | 'duration_ms' | 'added_at'>('title');
+	let sortDir = $state<'asc' | 'desc'>('asc');
 
 	let filtered = $derived(
 		searchQuery
@@ -28,12 +30,55 @@ import type { DomainItem } from '$lib/types/ipc';
 			: items,
 	);
 
+	let sorted = $derived(
+		[...filtered].sort((a, b) => {
+			let cmp = 0;
+			switch (sortField) {
+				case 'title':
+					cmp = (a.title || '').localeCompare(b.title || '');
+					break;
+				case 'author':
+					cmp = (a.author || '').localeCompare(b.author || '');
+					break;
+				case 'duration_ms':
+					cmp = (a.duration_ms ?? 0) - (b.duration_ms ?? 0);
+					break;
+				case 'added_at':
+					cmp = (a.added_at || '').localeCompare(b.added_at || '');
+					break;
+			}
+			return sortDir === 'asc' ? cmp : -cmp;
+		}),
+	);
+
 	function handleSearchInput(e: Event) {
 		const el = e.target as HTMLInputElement;
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
 			searchQuery = el.value;
 		}, 300);
+	}
+
+	function handleSort(field: typeof sortField) {
+		if (sortField === field) {
+			sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortField = field;
+			sortDir = 'asc';
+		}
+	}
+
+	function formatDate(iso: string): string {
+		if (!iso) return '—';
+		try {
+			return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+		} catch {
+			return '—';
+		}
+	}
+
+	function sortArrow(field: typeof sortField): string {
+		return sortField === field ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
 	}
 </script>
 
@@ -120,13 +165,26 @@ import type { DomainItem } from '$lib/types/ipc';
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
-						<th class="text-left px-4 py-3 font-medium">Title</th>
-						<th class="text-left px-4 py-3 font-medium hidden sm:table-cell">Author</th>
-						<th class="text-right px-4 py-3 font-medium hidden md:table-cell">Duration</th>
+						<th
+							onclick={() => handleSort('title')}
+							class="text-left px-4 py-3 font-medium cursor-pointer hover:text-white select-none"
+						>Title{sortArrow('title')}</th>
+						<th
+							onclick={() => handleSort('author')}
+							class="text-left px-4 py-3 font-medium cursor-pointer hover:text-white select-none hidden sm:table-cell"
+						>Author{sortArrow('author')}</th>
+						<th
+							onclick={() => handleSort('duration_ms')}
+							class="text-right px-4 py-3 font-medium cursor-pointer hover:text-white select-none hidden md:table-cell"
+						>Duration{sortArrow('duration_ms')}</th>
+						<th
+							onclick={() => handleSort('added_at')}
+							class="text-right px-4 py-3 font-medium cursor-pointer hover:text-white select-none hidden lg:table-cell"
+						>Added{sortArrow('added_at')}</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each filtered as item}
+					{#each sorted as item}
 						<tr
 							onclick={() => onSelect?.(item)}
 							class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
@@ -135,6 +193,9 @@ import type { DomainItem } from '$lib/types/ipc';
 							<td class="px-4 py-3 text-gray-400 hidden sm:table-cell">{item.author || 'Unknown'}</td>
 							<td class="px-4 py-3 text-gray-500 text-right hidden md:table-cell">
 								{item.duration_ms != null ? `${Math.floor(item.duration_ms / 60000)} min` : '—'}
+							</td>
+							<td class="px-4 py-3 text-gray-500 text-right hidden lg:table-cell whitespace-nowrap">
+								{formatDate(item.added_at)}
 							</td>
 						</tr>
 					{/each}
