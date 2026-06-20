@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ContentItem, ProgressRecord, DomainItem } from '$lib/types/ipc';
+import type { ContentItem, DomainRecord, ProgressRecord, DomainItem } from '$lib/types/ipc';
 
 /** Transform raw core ContentItem into frontend-friendly DomainItem */
 function toDomainItem(raw: Record<string, unknown>): DomainItem {
@@ -20,6 +20,14 @@ function toDomainItem(raw: Record<string, unknown>): DomainItem {
 /** Transform raw core ContentItem[] into DomainItem[] */
 function toDomainItems(raw: unknown[]): DomainItem[] {
 	return raw.map((r) => toDomainItem(r as Record<string, unknown>));
+}
+
+export async function listDomains(): Promise<DomainRecord[]> {
+	return invoke('library_list_domains') as Promise<DomainRecord[]>;
+}
+
+export async function countContent(domainId: string): Promise<number> {
+	return invoke('library_count_content', { domainId }) as Promise<number>;
 }
 
 export async function listLibrary(domainId: string): Promise<DomainItem[]> {

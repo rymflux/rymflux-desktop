@@ -1,7 +1,7 @@
 use rymflux_core::commands;
 use rymflux_core::audio::PlaybackEngine;
 use rymflux_core::storage::StorageEngine;
-use rymflux_core::types::{AudioSource, ContentIdentity, ContentItem, DomainId, PlaybackState, ProgressRecord};
+use rymflux_core::types::{AudioSource, ContentIdentity, ContentItem, DomainId, DomainRecord, PlaybackState, ProgressRecord};
 use std::sync::Mutex;
 
 /// Strip the domain prefix from a content ID to get the raw catalog ID.
@@ -114,6 +114,24 @@ pub fn library_list(
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
     commands::library::list(&storage, &domain, None, None).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn library_list_domains(
+    storage_state: tauri::State<'_, Mutex<StorageEngine>>,
+) -> Result<Vec<DomainRecord>, String> {
+    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+    commands::library::list_domains(&storage).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn library_count_content(
+    storage_state: tauri::State<'_, Mutex<StorageEngine>>,
+    domain_id: String,
+) -> Result<i64, String> {
+    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+    let domain = DomainId::from(domain_id);
+    commands::library::count_by_domain(&storage, &domain).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

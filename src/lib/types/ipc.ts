@@ -42,6 +42,18 @@ export interface ContentItem {
 	added_at: string;
 }
 
+// ── Domain record (mirrors rymflux_core::types::DomainRecord) ─────────────
+
+export interface DomainRecord {
+	id: string;
+	display_name: string;
+	version: string;
+	enabled: boolean;
+	install_path: string | null;
+	permissions: string;
+	added_at: number;
+}
+
 // ── Frontend display type (extracted from ContentItem.metadata_json) ──────
 
 export interface DomainItem {

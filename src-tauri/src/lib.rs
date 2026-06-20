@@ -63,6 +63,8 @@ pub fn run() {
             commands::get_audio_state,
             commands::stop_audio,
             commands::library_list,
+            commands::library_list_domains,
+            commands::library_count_content,
             commands::library_search,
             commands::library_get_detail,
             commands::progress_get,
