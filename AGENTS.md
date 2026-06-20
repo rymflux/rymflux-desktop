@@ -1,10 +1,141 @@
 # Agent Context
 
+## Quick Start
+
+Before implementing anything:
+
+1. Read `PLAN.md` for the step's expected shape
+2. Verify APIs against the source of truth (see below) — the plan may be aspirational
+3. Implement
+4. Append entry to `IMPLEMENTATION_JOURNAL.md` with any divergences, discoveries, or lessons
+5. Run verification commands (see Build & Verify)
+
+---
+
 ## Planning & Documentation
 
 - **`PLAN.md`** — Master implementation plan. Contains architecture, DDL, API surfaces, and test requirements. **Consult this first** before any implementation step. When the plan says X but the real API says Y, fix the plan with a `⚠️` callout so it stays accurate.
 - **`IMPLEMENTATION_JOURNAL.md`** — Chronological log of plan divergences, API corrections, architecture decisions, and testing discoveries. Append to this after each completed step. Use it to avoid repeating mistakes and to know which parts of the plan are stale.
-- **Workflow:** Read `PLAN.md` for the step → verify APIs against vendor/docs (see below) → implement → append entry to `IMPLEMENTATION_JOURNAL.md`.
+
+⏰ **After finishing each step, append to `IMPLEMENTATION_JOURNAL.md`** even if no divergences occurred — a "no issues found" entry is still useful for future agents.
+
+---
+
+## Frontend Architecture
+
+### Tech stack
+- **Svelte 5** with runes (`$state`, `$derived`, `$effect`)
+- **SvelteKit** routing (file-based, `+page.svelte`, `+layout.svelte`, `+page.ts`)
+- **Tailwind CSS v4** via `@tailwindcss/vite` plugin
+- **TypeScript** in all `.svelte` files (use `<script lang="ts">`)
+
+### Path alias
+- `$src` maps to `./src` (configured in `svelte.config.js` via `kit.alias`)
+- Example: `import DetailView from '$src/domains/audiobook/DetailView.svelte'`
+
+### .svelte.ts convention
+Files using Svelte 5 runes (`$state`, `$derived`, etc.) outside `.svelte` files must use the `.svelte.ts` extension (e.g., `playerStore.svelte.ts`, `uiStore.svelte.ts`). This tells SvelteKit's compiler to process them.
+
+### Layout hierarchy
+```
++layout.svelte (root)
+  └── ShellLayout.svelte (3-zone grid: Sidebar | <main> | PlayerBar)
+       ├── Sidebar.svelte (nav links)
+       ├── <main> — route content ({@render children()})
+       │    └── ErrorBoundary.svelte (wraps route content)
+       └── PlayerBar.svelte (persistent bottom bar when audio is loaded)
+            ├── Mini-info section (cover thumbnail, title, progress bar, clickable nav)
+            ├── SeekBar + TimeDisplay (position / remaining)
+            ├── PlaybackControls (play/pause, skip, speed)
+            └── VolumeSlider
+```
+
+### Control flow
+- `+layout.svelte` defines all handler functions (`handlePlayPause`, `handleSeek`, etc.)
+- These are passed as props through `ShellLayout` → `PlayerBar`
+- The `TauriAudioEngine` instance is set via `setAudioEngine()` (Svelte context, keyed by `Symbol('audioEngine')`)
+- Components that need the engine call `getAudioEngine()` from `$lib/ipc/engineContext`
+- `playerStore.svelte.ts` holds reactive playback state; `updatePlaybackState(s)` is called on every `audio:progress` event
+
+### Stores
+| Store | Purpose | Key fields |
+|-------|---------|------------|
+| `playerStore.svelte.ts` | Playback state | `positionMs`, `durationMs`, `speed`, `volume`, `isPlaying`, `isLoaded`, `currentSource`, `currentContentId`, `currentTitle` |
+| `uiStore.svelte.ts` | UI preferences | `sidebarOpen`, `viewMode` |
+
+### IPC layers
+File naming reflects domain:
+| File | Backend commands |
+|------|-----------------|
+| `$lib/ipc/audioEngine.ts` | `TauriAudioEngine` class — wraps all playback `invoke` calls + event listeners |
+| `$lib/ipc/catalog.ts` | `catalog_search`, `catalog_get_book`, `addToLibrary`, `resolveSource` |
+| `$lib/ipc/library.ts` | `listLibrary`, `searchLibrary`, `getLibraryDetail`, `removeFromLibrary`, progress CRUD |
+| `$lib/types/ipc.ts` | Shared TypeScript types mirroring Rust IPC types |
+
+### Domains
+Domain-specific components live in `src/domains/<domain>/`:
+- `audiobook/DetailView.svelte` — Book detail page (cover, chapters, play/add/remove buttons)
+- `audiobook/NowPlayingView.svelte` — Full player view (unwired from routes)
+- `audiobook/MiniPlayer.svelte` — Compact player bar format
+- `audiobook/LibraryView.svelte` — Grid/list library browser with search filter
+
+### Error boundaries
+Svelte 5 has a **built-in `<svelte:boundary>`** element (verified at `opensrc/.../svelte/src/internal/client/dom/blocks/boundary.js`). It supports:
+- `onerror={(error, reset) => void}` — callback for logging/side effects
+- `failed={snippet}` — fallback UI snippet (rendered on error)
+- `pending={snippet}` — loading state for async content
+
+Use `<svelte:boundary>` instead of implementing custom error catching via window events.
+
+---
+
+## Build & Verify
+
+### Rust backend
+```bash
+# Compile check (fast, skips linking)
+cargo check
+
+# Full test
+cargo test
+
+# Clippy (must pass before PR)
+cargo clippy -- -D warnings
+
+# Regenerate rustdoc
+cargo doc
+```
+
+**When to run each:**
+- `cargo check` after any Rust or Tauri command change
+- `cargo test` when modifying Rust business logic
+- `cargo clippy -- -D warnings` before submitting changes
+- `cd src-tauri && cargo check` if running from project root fails (Cargo.toml is in src-tauri/)
+- For Tauri command/permission/plugin/config changes that affect the full app, run `pnpm run tauri build`
+
+### Frontend (Svelte/TypeScript)
+```bash
+# Type check (uses pnpm, NOT npm)
+pnpm run check
+
+# Build
+pnpm run build
+
+# Lint
+pnpm dlx eslint .
+```
+
+**When to run each:**
+- `pnpm run check` after any Svelte, TypeScript, routing, store, or component change
+- `pnpm run build` after any frontend change
+- `pnpm dlx eslint .` after any frontend change
+
+### Rules
+- Never assume a small edit compiles
+- Run the appropriate verification commands for the changed layers
+- Do not mark work complete if any verification command fails
+
+---
 
 ## Dependency Source Truth (`src-tauri/vendor/`)
 
@@ -17,71 +148,50 @@
 - **Location:** `src-tauri/target/doc/<crate>/index.html` (open in browser)
 - **Root crate:** `src-tauri/target/doc/rymflux_desktop_lib/index.html`
 - **Use case:** Navigate trait associated types, enum variants, module re-exports. Faster for exploration than grepping vendor source.
-- **Regenerate:** `cargo doc` (or `cargo doc --open` to launch browser)
 - **Caveat:** Docs reflect what was true at `cargo doc` time. If you change a dependency version, re-run `cargo doc`.
 
-## Effective API Research
+## Effective API Research (Rust)
 
-When a step requires a library API you haven't used before (e.g., Symphonia `FormatReader`):
+When a step requires a Rust library API you haven't used before (e.g., Symphonia `FormatReader`):
 
 1. **Grep the vendor source** for the type or trait name:
    ```
    rg "pub trait Source" vendor/rodio/src/
-   rg "pub struct AudiobookSource" vendor/rodio/src/  (if it exists)
+   rg "pub struct AudiobookSource" vendor/rodio/src/
    ```
 2. **Read the trait definition** — all required methods, their signatures, and provided methods with defaults.
-4. **If the plan exists, verify every API detail against vendor.** The plan may be aspirational.
-5. **Cross-reference** with `cargo doc` for navigation-friendly exploration.
+3. **If the plan exists, verify every API detail against vendor.** The plan may be aspirational.
+4. **Cross-reference** with `cargo doc` for navigation-friendly exploration.
 
+### ⚠️ Code-searcher scope
+The `code-searcher` agent can only search files **within the project directory**. It cannot access sibling crates (like `../rymflux-core/`). To search the core crate, use `basher` with `grep`/`rg` commands directly.
 
-## Framework Source of Truth
+## Framework Source of Truth (Svelte/SvelteKit)
 
 Use the local OpenSrc copies of Svelte and SvelteKit as the primary source of truth for framework behavior, APIs, implementation details, and best practices.
 
-Svelte source:
-$(opensrc path svelte)
-
-SvelteKit source:
-$(opensrc path @sveltejs/kit)
+Run these in a terminal to find the source paths:
+```bash
+opensrc path svelte
+opensrc path @sveltejs/kit
+```
 
 When answering questions or generating code related to Svelte or SvelteKit:
 
-1. Inspect the relevant source files before responding.
-2. Prefer repository source over memory or assumptions.
-3. If documentation, examples, or prior knowledge conflict with the source, follow the source.
-4. Cite the specific files, functions, types, or modules that support your answer when practical.
-5. For framework internals, lifecycle behavior, reactivity, routing, load functions, adapters, and configuration, verify implementation details directly from the repositories.
-6. Do not assume behavior based on older Svelte or SvelteKit versions.
+1. **Inspect the relevant source files before responding.** Don't assume — verify.
+2. **Prefer repository source over memory or assumptions.**
+3. **If documentation, examples, or prior knowledge conflict with the source, follow the source.**
+4. **Cite the specific files, functions, types, or modules** that support your answer when practical.
+5. **For framework internals, lifecycle behavior, reactivity, routing, load functions, adapters, and configuration — verify implementation details directly from the repositories.**
+6. **Do not assume behavior based on older Svelte or SvelteKit versions.**
+
+### What to look for in the Svelte source
+| Topic | Location in `opensrc` Svelte source |
+|-------|--------------------------------------|
+| Error boundaries (`<svelte:boundary>`) | `src/internal/client/dom/blocks/boundary.js` |
+| Compiler analysis | `src/compiler/phases/2-analyze/visitors/` |
+| Client codegen | `src/compiler/phases/3-transform/client/visitors/` |
+| Public API exports | `src/index-client.js` |
+| TypeScript types | `src/index.d.ts` (partial — many internals untyped) |
 
 Treat these repositories as the authoritative reference for the installed versions in this project.
-
-## Build & Verify
-
-- **Compile check:** `cargo check` (fast, skips linking)
-- **Full test:** `cargo test`
-- **Clippy:** `cargo clippy -- -D warnings` (must pass before PR)
-- **Lint after any change** — never assume a small edit compiles.
-
-## Build & Verify
-
-* **Frontend type check:** `pnpm run check`
-* **Frontend build:** `pnpm run build`
-* **Frontend lint:** `pnpm dlx eslint [options] [file|dir|glob]*` 
-
-* **Compile check:** `cargo check`
-* **Full test:** `cargo test`
-* **Clippy:** `cargo clippy -- -D warnings`
-* **Production app build (for Tauri-related changes):** `pnpm run tauri build`
-
-### Verification Rules
-
-* Run `npm run check` after any Svelte, TypeScript, routing, store, or component change.
-* Run `npm run build` after any frontend change.
-* Run `pnpm dlx eslint .` after any frontend change.
-* Run `cargo check` after any Rust or Tauri backend change.
-* Run `cargo test` when modifying Rust business logic.
-* Run `cargo clippy -- -D warnings` before submitting changes.
-* Run `npm run tauri build` when modifying Tauri commands, permissions, configuration, plugins, window management, IPC, or application startup.
-* Never assume a small edit compiles; always verify with the appropriate commands.
-* Do not mark work complete if any verification command fails.
-

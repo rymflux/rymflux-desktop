@@ -11,6 +11,7 @@
 		onAddToLibrary,
 		onRemoveFromLibrary,
 		adding = false,
+		removing = false,
 		isInLibrary = false,
 		hideAddButton = false,
 		hideChapters = false,
@@ -22,6 +23,7 @@
 		onAddToLibrary?: () => void;
 		onRemoveFromLibrary?: () => void;
 		adding?: boolean;
+		removing?: boolean;
 		isInLibrary?: boolean;
 		hideAddButton?: boolean;
 		hideChapters?: boolean;
@@ -50,9 +52,10 @@
 				{#if isInLibrary}
 					<button
 						onclick={() => onRemoveFromLibrary?.()}
-						class="px-5 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors border border-red-600/30"
+						disabled={removing}
+						class="px-5 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors border border-red-600/30 disabled:opacity-50"
 					>
-						Remove from Library
+						{removing ? 'Removing…' : 'Remove from Library'}
 					</button>
 				{:else}
 					<button

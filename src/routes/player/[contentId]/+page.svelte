@@ -22,6 +22,7 @@ import type { CatalogDetail } from '$lib/types/ipc';
 	let savedProgress = $state(0);
 	let loading = $state(true);
 	let adding = $state(false);
+	let removing = $state(false);
 	let isInLibrary = $state(false);
 
 	onMount(async () => {
@@ -69,11 +70,15 @@ import type { CatalogDetail } from '$lib/types/ipc';
 	}
 
 	async function handleRemoveFromLibrary() {
+		if (removing) return;
+		removing = true;
 		try {
 			await removeFromLibrary(params.contentId);
 			isInLibrary = false;
 		} catch (e) {
 			console.error('remove from library failed', e);
+		} finally {
+			removing = false;
 		}
 	}
 </script>
@@ -92,6 +97,7 @@ import type { CatalogDetail } from '$lib/types/ipc';
 			onAddToLibrary={handleAddToLibrary}
 			onRemoveFromLibrary={handleRemoveFromLibrary}
 			{adding}
+			{removing}
 			{isInLibrary}
 		/>
 	{:else}
