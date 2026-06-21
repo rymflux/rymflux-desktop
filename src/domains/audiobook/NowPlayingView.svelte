@@ -12,27 +12,53 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 	let playerState = getPlayerState();
 
-	let sleepTimer = $state<{ endTime: number } | null>(null);
-	let sleepOption = $state<'none' | 15 | 30 | 45 | 60>('none');
-	let timerHandle = $state<ReturnType<typeof setInterval> | undefined>();
+let sleepTimer = $state<{ endTime: number } | null>(null);
+let sleepOption = $state<'none' | 15 | 30 | 45 | 60 | 'chapter'>('none');
+let timerHandle = $state<ReturnType<typeof setTimeout> | undefined>();
 
-	$effect(() => {
-		if (sleepTimer && Date.now() >= sleepTimer.endTime) {
-			engine.pause(playerState.currentDomainId, playerState.currentContentId!);
-			sleepTimer = null;
-			sleepOption = 'none';
-		}
-	});
-
-	function startSleepTimer(minutes: number) {
-		sleepTimer = { endTime: Date.now() + minutes * 60 * 1000 };
-		sleepOption = minutes as typeof sleepOption;
-	}
-
-	function cancelSleepTimer() {
+function startSleepTimer(minutes: number) {
+	const endTime = Date.now() + minutes * 60 * 1000;
+	sleepTimer = { endTime };
+	sleepOption = minutes as typeof sleepOption;
+	clearTimeout(timerHandle);
+	timerHandle = setTimeout(() => {
+		engine.pause(playerState.currentDomainId, playerState.currentContentId!);
 		sleepTimer = null;
 		sleepOption = 'none';
-	}
+		timerHandle = undefined;
+	}, minutes * 60 * 1000);
+}
+
+function startChapterSleep() {
+	clearTimeout(timerHandle);
+	sleepTimer = null;
+	sleepOption = 'chapter';
+}
+
+function cancelSleepTimer() {
+	clearTimeout(timerHandle);
+	sleepTimer = null;
+	sleepOption = 'none';
+	timerHandle = undefined;
+}
+
+let cleanupFinished: UnlistenFn | undefined;
+
+onMount(() => {
+	const setup = async () => {
+		cleanupFinished = await listen<void>('audio:finished', () => {
+			if (sleepOption === 'chapter') {
+				engine.pause(playerState.currentDomainId, playerState.currentContentId!);
+				sleepOption = 'none';
+			}
+		});
+	};
+	setup();
+
+	return () => {
+		cleanupFinished?.();
+	};
+});
 
 	function handleSeekFraction(f: number) {
 		if (!playerState.currentContentId) return;
@@ -124,6 +150,20 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 						{mins}m
 					</button>
 				{/each}
+				<button
+					onclick={startChapterSleep}
+					class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-xs"
+				>
+					End of chapter
+				</button>
+			{:else if sleepOption === 'chapter'}
+				<span class="text-blue-400 text-xs">Sleeping at end of chapter</span>
+				<button
+					onclick={cancelSleepTimer}
+					class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-xs"
+				>
+					Cancel
+				</button>
 			{:else}
 				<span class="text-blue-400 text-xs">Sleeping in {sleepOption} min</span>
 				<button
