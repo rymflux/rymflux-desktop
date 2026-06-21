@@ -111,6 +111,17 @@ pub fn library_remove_from(
 }
 
 #[tauri::command]
+pub fn library_clear(
+    storage_state: tauri::State<'_, Mutex<StorageEngine>>,
+    domain_id: String,
+) -> Result<(), String> {
+    use rymflux_core::types::DomainId;
+    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+    rymflux_core::commands::library::clear(&storage, &DomainId::from(domain_id.as_str()))
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn library_list(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,

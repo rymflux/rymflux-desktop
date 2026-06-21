@@ -47,6 +47,10 @@ export async function removeFromLibrary(contentId: string): Promise<void> {
 	return invoke('library_remove_from', { contentId });
 }
 
+export async function clearLibrary(domainId: string): Promise<void> {
+	return invoke('library_clear', { domainId });
+}
+
 /** Check whether a content item exists in the library. Returns null if not found. */
 export async function getLibraryDetail(contentId: string): Promise<ContentItem | null> {
 	try {

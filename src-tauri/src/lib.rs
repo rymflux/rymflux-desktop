@@ -75,6 +75,7 @@ pub fn run() {
             commands::catalog_get_book,
             commands::library_add_from_catalog,
             commands::library_remove_from,
+            commands::library_clear,
             commands::audiobook_resolve_source,
             commands::audiobook_get_archive_id,
         ])
