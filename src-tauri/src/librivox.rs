@@ -79,7 +79,7 @@ pub async fn search_by_title(
     limit: u32,
     offset: u32,
 ) -> Result<Vec<LibrivoxBook>, String> {
-    let url = format!("{BASE_URL}?title=%5E{query}&format=json&limit={limit}&offset={offset}");
+    let url = format!("{BASE_URL}?title=%5E{query}&format=json&limit={limit}&offset={offset}&coverart=1");
     let resp = HTTP_CLIENT
         .get(&url)
         .send()
@@ -98,7 +98,7 @@ pub async fn search_by_author(
     limit: u32,
     offset: u32,
 ) -> Result<Vec<LibrivoxBook>, String> {
-    let url = format!("{BASE_URL}?author={author}&format=json&limit={limit}&offset={offset}");
+    let url = format!("{BASE_URL}?author={author}&format=json&limit={limit}&offset={offset}&coverart=1");
     let resp = HTTP_CLIENT
         .get(&url)
         .send()
