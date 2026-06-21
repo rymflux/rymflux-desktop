@@ -6,6 +6,8 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
+import { onMount } from 'svelte';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	let engine = getAudioEngine()!;
 
 	let playerState = getPlayerState();

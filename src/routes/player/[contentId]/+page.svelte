@@ -3,6 +3,7 @@
 	import { getProgress, getLibraryDetail, removeFromLibrary } from '$lib/ipc/library';
 	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore.svelte';
 	import DetailView from '$src/domains/audiobook/DetailView.svelte';
+	import NowPlayingView from '$src/domains/audiobook/NowPlayingView.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { onMount } from 'svelte';
 import type { CatalogDetail } from '$lib/types/ipc';
@@ -24,6 +25,8 @@ import type { CatalogDetail } from '$lib/types/ipc';
 	let adding = $state(false);
 	let removing = $state(false);
 	let isInLibrary = $state(false);
+let showDetails = $state(false);
+let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContentId === params.contentId);
 
 	onMount(async () => {
 		const bPromise = getBook(catalogId).catch((e) => {
@@ -89,17 +92,39 @@ import type { CatalogDetail } from '$lib/types/ipc';
 			<div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
 		</div>
 	{:else if book}
-		<DetailView
-			{book}
-			contentId={params.contentId}
-			{savedProgress}
-			onPlay={handlePlay}
-			onAddToLibrary={handleAddToLibrary}
-			onRemoveFromLibrary={handleRemoveFromLibrary}
-			{adding}
-			{removing}
-			{isInLibrary}
-		/>
+		{#if showNowPlaying && !showDetails}
+			<NowPlayingView />
+			<div class="text-center mt-4">
+				<button
+					onclick={() => showDetails = true}
+					class="text-sm text-blue-400 hover:underline"
+				>
+					← Show Book Details & Chapters
+				</button>
+			</div>
+		{:else}
+			<DetailView
+				{book}
+				contentId={params.contentId}
+				{savedProgress}
+				onPlay={handlePlay}
+				onAddToLibrary={handleAddToLibrary}
+				onRemoveFromLibrary={handleRemoveFromLibrary}
+				{adding}
+				{removing}
+				{isInLibrary}
+			/>
+			{#if showNowPlaying}
+				<div class="text-center mt-4">
+					<button
+						onclick={() => showDetails = false}
+						class="text-sm text-blue-400 hover:underline"
+					>
+						Show Player
+					</button>
+				</div>
+			{/if}
+		{/if}
 	{:else}
 		<div class="text-center py-12">
 			<p class="text-gray-500">Book not found.</p>
