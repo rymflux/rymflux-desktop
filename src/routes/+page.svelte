@@ -4,6 +4,7 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let playerState = getPlayerState();
 	let cards = $state<{
@@ -62,7 +63,7 @@
 				<p class="text-lg font-semibold truncate">{playerState.currentTitle || 'Untitled'}</p>
 			</div>
 			<a
-				href="/player/{playerState.currentContentId}"
+				href={resolve('/player/[contentId]', { contentId: playerState.currentContentId! })}
 				class="shrink-0 px-4 py-2 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
 			>
 				Open Player
@@ -83,7 +84,7 @@
 			</p>
 		{:else}
 			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{#each cards as card}
+				{#each cards as card (card.contentId)}
 					<div class="bg-white/5 rounded-xl overflow-hidden border border-white/10 flex flex-col">
 						<div class="aspect-[3/4] bg-white/5">
 							<CoverImage url={card.coverUrl} title={card.title} class="w-full h-full object-cover" />
@@ -107,7 +108,7 @@
 							{/if}
 
 							<button
-								onclick={() => goto(`/player/${card.contentId}`)}
+								onclick={() => goto(resolve(`/player/${card.contentId}`))}
 								class="w-full mt-1 px-3 py-1.5 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
 							>
 								Continue

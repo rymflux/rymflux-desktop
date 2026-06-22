@@ -1,15 +1,14 @@
 <script lang="ts">
 	import CoverImage from '$lib/components/CoverImage.svelte';
 import type { DomainItem } from '$lib/types/ipc';
+import { resolve } from '$app/paths';
 
 	let {
 		items = [],
-		domainId = 'audiobook',
 		onSelect,
 		loading = false,
 	}: {
 		items: DomainItem[];
-		domainId?: string;
 		onSelect?: (item: DomainItem) => void;
 		loading?: boolean;
 	} = $props();
@@ -135,17 +134,17 @@ import type { DomainItem } from '$lib/types/ipc';
 			</p>
 			{#if !searchQuery}
 				<p class="text-gray-500 text-sm mt-1">Browse the LibriVox catalog to add audiobooks.</p>
-				<a
-					href="/search"
-					class="inline-block mt-4 px-5 py-2 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-				>
+	<a
+				href={resolve('/search')}
+				class="inline-block mt-4 px-5 py-2 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+			>
 					Browse Catalog
 				</a>
 			{/if}
 		</div>
 	{:else if viewMode === 'grid'}
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-			{#each filtered as item}
+			{#each filtered as item (item.content_id)}
 				<button
 					onclick={() => onSelect?.(item)}
 					class="group text-left"
@@ -184,7 +183,7 @@ import type { DomainItem } from '$lib/types/ipc';
 					</tr>
 				</thead>
 				<tbody>
-					{#each sorted as item}
+					{#each sorted as item (item.content_id)}
 						<tr
 							onclick={() => onSelect?.(item)}
 							class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"

@@ -2,6 +2,7 @@
 	import { listDomains, countContent } from '$lib/ipc/library';
 	import type { DomainRecord } from '$lib/types/ipc';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 
 	let domains = $state<{ id: string; label: string; count: number }[]>([]);
 	let loading = $state(true);
@@ -36,7 +37,7 @@
 		<div class="text-center py-12">
 			<p class="text-gray-400">No library domains found.</p>
 			<a
-				href="/search"
+				href={resolve('/search')}
 				class="inline-block mt-4 px-5 py-2 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
 			>
 				Browse Catalog
@@ -44,9 +45,9 @@
 		</div>
 	{:else}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-			{#each domains as domain}
+			{#each domains as domain (domain.id)}
 				<a
-					href="/library/{domain.id}"
+					href={resolve('/library/[domain]', { domain: domain.id })}
 					class="block p-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
 				>
 					<h2 class="text-lg font-semibold group-hover:text-blue-400 transition-colors">{domain.label}</h2>

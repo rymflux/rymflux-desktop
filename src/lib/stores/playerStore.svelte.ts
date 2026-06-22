@@ -8,11 +8,11 @@ let isPlaying = $state(false);
 let isLoaded = $state(false);
 let currentSource = $state<AudioSource | null>(null);
 let currentContentId = $state<string | null>(null);
-let currentDomainId = $state<string>('audiobook');
+const currentDomainId = $state<string>('audiobook');
 let currentTitle = $state('');
 
-let remainingMs = $derived(durationMs - positionMs);
-let progressFraction = $derived(durationMs > 0 ? positionMs / durationMs : 0);
+const remainingMs = $derived(durationMs - positionMs);
+const progressFraction = $derived(durationMs > 0 ? positionMs / durationMs : 0);
 
 export function getPlayerState() {
 	return {

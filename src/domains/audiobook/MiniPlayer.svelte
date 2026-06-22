@@ -2,6 +2,7 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
+	import { resolve } from '$app/paths';
 
 	let playerState = getPlayerState();
 	let engine = getAudioEngine();
@@ -18,7 +19,7 @@
 </script>
 
 <a
-	href="/player/{playerState.currentContentId}"
+	href={resolve('/player/[contentId]', { contentId: playerState.currentContentId! })}
 	class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
 >
 	<div class="w-8 h-8 rounded overflow-hidden bg-white/10 shrink-0">

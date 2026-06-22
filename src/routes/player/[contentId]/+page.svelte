@@ -7,6 +7,7 @@
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { onMount } from 'svelte';
 import type { CatalogDetail } from '$lib/types/ipc';
+import { resolve } from '$app/paths';
 
 	let { params } = $props();
 	let playerState = getPlayerState();
@@ -105,7 +106,6 @@ let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContent
 		{:else}
 			<DetailView
 				{book}
-				contentId={params.contentId}
 				{savedProgress}
 				onPlay={handlePlay}
 				onAddToLibrary={handleAddToLibrary}
@@ -128,7 +128,7 @@ let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContent
 	{:else}
 		<div class="text-center py-12">
 			<p class="text-gray-500">Book not found.</p>
-			<a href="/search" class="text-blue-400 text-sm mt-2 inline-block hover:underline">Search catalog</a>
+			<a href={resolve('/search')} class="text-blue-400 text-sm mt-2 inline-block hover:underline">Search catalog</a>
 		</div>
 	{/if}
 </div>

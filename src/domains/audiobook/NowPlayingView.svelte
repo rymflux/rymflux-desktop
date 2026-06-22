@@ -12,18 +12,14 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 	let playerState = getPlayerState();
 
-let sleepTimer = $state<{ endTime: number } | null>(null);
 let sleepOption = $state<'none' | 15 | 30 | 45 | 60 | 'chapter'>('none');
 let timerHandle = $state<ReturnType<typeof setTimeout> | undefined>();
 
 function startSleepTimer(minutes: number) {
-	const endTime = Date.now() + minutes * 60 * 1000;
-	sleepTimer = { endTime };
 	sleepOption = minutes as typeof sleepOption;
 	clearTimeout(timerHandle);
 	timerHandle = setTimeout(() => {
 		engine.pause(playerState.currentDomainId, playerState.currentContentId!);
-		sleepTimer = null;
 		sleepOption = 'none';
 		timerHandle = undefined;
 	}, minutes * 60 * 1000);
@@ -31,14 +27,11 @@ function startSleepTimer(minutes: number) {
 
 function startChapterSleep() {
 	clearTimeout(timerHandle);
-	sleepTimer = null;
 	sleepOption = 'chapter';
 }
 
 function cancelSleepTimer() {
 	clearTimeout(timerHandle);
-	sleepTimer = null;
-	sleepOption = 'none';
 	timerHandle = undefined;
 }
 
@@ -123,7 +116,6 @@ onMount(() => {
 	<div class="flex justify-center">
 		<PlaybackControls
 			onPlayPause={handlePlayPause}
-			onSeek={handleSeekFraction}
 			onSkipBack={handleSkipBack}
 			onSkipForward={handleSkipForward}
 			onSpeedChange={handleSpeedChange}
@@ -142,7 +134,7 @@ onMount(() => {
 		<div class="flex items-center gap-2 text-sm">
 			<span class="text-gray-500">Sleep:</span>
 			{#if sleepOption === 'none'}
-				{#each [15, 30, 45, 60] as mins}
+				{#each [15, 30, 45, 60] as mins (mins)}
 					<button
 						onclick={() => startSleepTimer(mins)}
 						class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-xs"

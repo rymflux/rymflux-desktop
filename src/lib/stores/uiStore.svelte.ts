@@ -1,5 +1,5 @@
 let sidebarOpen = $state(true);
-let theme = $state<'light' | 'dark'>('dark');
+const theme = $state<'light' | 'dark'>('dark');
 let viewMode = $state<'grid' | 'list'>('grid');
 
 export function getUiState() {

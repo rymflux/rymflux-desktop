@@ -6,6 +6,7 @@
 	import VolumeSlider from './VolumeSlider.svelte';
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let {
 		onPlayPause,
@@ -32,7 +33,7 @@
 
 	function handleNavToPlayer() {
 		if (playerState.currentContentId) {
-			goto(`/player/${playerState.currentContentId}`);
+			goto(resolve(`/player/${playerState.currentContentId}`));
 		}
 	}
 </script>
@@ -77,7 +78,6 @@
 		<!-- Controls -->
 		<PlaybackControls
 			{onPlayPause}
-			onSeek={handleSeekFraction}
 			{onSkipBack}
 			{onSkipForward}
 			{onSpeedChange}

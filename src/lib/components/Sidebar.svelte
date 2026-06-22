@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getUiState } from '$lib/stores/uiStore.svelte';
 	import { page } from '$app/stores';
+	import { resolve } from '$app/paths';
 
 	let ui = getUiState();
 	let nav = $derived([
@@ -8,7 +9,7 @@
 		{ href: '/search', label: 'Search', icon: 'search' },
 		{ href: '/library', label: 'Library', icon: 'library' },
 		{ href: '/settings', label: 'Settings', icon: 'settings' },
-	]);
+	] as const);
 </script>
 
 <aside
@@ -17,13 +18,13 @@
 	aria-label="Sidebar navigation"
 >
 	<div class="p-4 shrink-0">
-		<a href="/" class="text-lg font-bold tracking-tight text-white">rymflux</a>
+		<a href={resolve('/')} class="text-lg font-bold tracking-tight text-white">rymflux</a>
 	</div>
 
 	<nav class="flex-1 px-2 space-y-1">
-		{#each nav as item}
+		{#each nav as item (item.href)}
 			<a
-				href={item.href}
+				href={resolve(item.href)}
 				class="block px-3 py-2 rounded-lg text-sm transition-colors
 					{$page.url.pathname === item.href ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}"
 			>

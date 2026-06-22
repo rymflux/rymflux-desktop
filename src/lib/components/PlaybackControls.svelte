@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
-	let { onPlayPause, onSeek, onSkipBack, onSkipForward, onSpeedChange } = $props<{
+	let { onPlayPause, onSkipBack, onSkipForward, onSpeedChange } = $props<{
 		onPlayPause?: () => void;
-		onSeek?: (fraction: number) => void;
 		onSkipBack?: () => void;
 		onSkipForward?: () => void;
 		onSpeedChange?: (rate: number) => void;
@@ -14,11 +13,6 @@
 
 	function togglePlayPause() {
 		onPlayPause?.();
-	}
-
-	function handleSeek(f: number) {
-		const target = Math.round(f * player.durationMs);
-		onSeek?.(target);
 	}
 
 	function speedLabel(r: number): string {
@@ -83,7 +77,7 @@
 			<div
 				class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-800 border border-white/10 rounded-lg shadow-xl py-1"
 			>
-				{#each speeds as r}
+				{#each speeds as r (r)}
 					<button
 						onclick={() => selectSpeed(r)}
 						class="block w-full px-4 py-1 text-xs hover:bg-white/10 text-left whitespace-nowrap {r === player.speed ? 'text-blue-400 font-bold' : 'text-white/80'}"

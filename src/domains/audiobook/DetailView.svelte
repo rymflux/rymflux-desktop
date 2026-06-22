@@ -5,7 +5,6 @@
 
 	let {
 		book,
-		contentId,
 		savedProgress = 0,
 		onPlay,
 		onAddToLibrary,
@@ -17,7 +16,6 @@
 		hideChapters = false,
 	}: {
 		book: CatalogDetail;
-		contentId: string;
 		savedProgress?: number;
 		onPlay?: (chapterIndex?: number) => void;
 		onAddToLibrary?: () => void;
@@ -89,7 +87,7 @@
 	<section>
 		<h2 class="text-lg font-semibold mb-3">Chapters</h2>
 		<div class="space-y-1">
-			{#each book.sections as section, i}
+			{#each book.sections as section, i (section.section_number)}
 				<button
 					onclick={() => onPlay?.(i)}
 					class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors text-left"

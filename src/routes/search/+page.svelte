@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { searchCatalog } from '$lib/ipc/catalog';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import type { CatalogItem } from '$lib/types/ipc';
@@ -89,9 +90,9 @@
 
 	{#if results.length > 0}
 		<div class="mt-6 space-y-2">
-			{#each results as book}
+			{#each results as book (book.id)}
 				<a
-					href="/player/{book.id}"
+					href={resolve('/player/[contentId]', { contentId: book.id })}
 					class="block p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
 				>
 					<h3 class="font-semibold">{book.title}</h3>
