@@ -27,7 +27,6 @@ pub(crate) struct LibrivoxBook {
     pub(crate) totaltimesecs: Option<i64>,
     pub(crate) authors: Vec<LibrivoxAuthor>,
     // Extended fields (when extended=1)
-    pub(crate) url_iarchive: Option<String>,
     pub(crate) sections: Option<Vec<LibrivoxSection>>,
     // Cover art fields (when coverart=1)
     pub(crate) coverart_thumbnail: Option<String>,
@@ -138,13 +137,7 @@ pub fn book_to_content_item(book: &LibrivoxBook) -> ContentItem {
         .first()
         .map(|a| format!("{} {}", a.first_name, a.last_name))
         .unwrap_or_default();
-    // Derive cover URL: prefer coverart_jpg, fall back to IA thumbnail
-    let cover_url = book.coverart_jpg.clone().or_else(|| {
-        book.url_iarchive.as_ref().and_then(|url| {
-            let id = url.rsplit('/').next()?;
-            Some(format!("https://archive.org/services/img/{id}"))
-        })
-    });
+    let cover_url = book.coverart_jpg.clone();
     let metadata = serde_json::json!({
         "title": book.title,
         "author": author,

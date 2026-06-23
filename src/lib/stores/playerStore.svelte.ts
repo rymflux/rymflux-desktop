@@ -8,7 +8,7 @@ let isPlaying = $state(false);
 let isLoaded = $state(false);
 let currentSource = $state<AudioSource | null>(null);
 let currentContentId = $state<string | null>(null);
-const currentDomainId = $state<string>('audiobook');
+let currentDomainId = $state<string>('');
 let currentTitle = $state('');
 
 const remainingMs = $derived(durationMs - positionMs);
@@ -68,8 +68,10 @@ export function setCurrentTrack(
 	source: AudioSource,
 	contentId: string,
 	title?: string,
+	domainId?: string,
 ) {
 	currentSource = source;
 	currentContentId = contentId;
 	if (title) currentTitle = title;
+	if (domainId) currentDomainId = domainId;
 }

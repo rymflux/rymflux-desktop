@@ -51,12 +51,12 @@ let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContent
 		const idx = chapterIndex ?? 0;
 		const section = sections[idx];
 		if (!section) return;
-		const source = await resolveSource(section, book.archive_identifier ?? null);
+		const source = await resolveSource(section.listen_url, (section.playtime_secs ?? 0) * 1000);
 		// Seek to saved progress with 3s rewind when continuing
 		const startMs = savedProgress > 0 && chapterIndex === undefined
 			? Math.max(0, savedProgress - 3000)
 			: 0;
-		setCurrentTrack(source, params.contentId, book.item.title);
+		setCurrentTrack(source, params.contentId, book.item.title, 'audiobook');
 		engine?.play(source, params.contentId, startMs);
 	}
 

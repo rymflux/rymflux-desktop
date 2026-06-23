@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
-	import { syncProgress, getLibraryDetail } from '$lib/ipc/library';
+	import { syncProgress, getLibraryDetail, listDomains } from '$lib/ipc/library';
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -19,7 +19,11 @@
 
 	onMount(async () => {
 		try {
-			const progress = await syncProgress('audiobook');
+			const domains = await listDomains();
+			const allProgress = await Promise.all(
+				domains.map((d) => syncProgress(d.id).catch(() => [] as never[])),
+			);
+			const progress = allProgress.flat();
 			const inProgress = progress.filter((p) => p.position_ms > 0);
 
 			const results = await Promise.all(

@@ -19,13 +19,8 @@ export async function addToLibrary(catalogId: string): Promise<void> {
 }
 
 export async function resolveSource(
-	chapter: ChapterInfo,
-	archiveIdentifier: string | null,
+	listenUrl: string,
+	durationMs: number,
 ): Promise<AudioSource> {
-	return invoke('audiobook_resolve_source', {
-		listenUrl: chapter.listen_url,
-		durationMs: (chapter.playtime_secs ?? 0) * 1000,
-		sectionNumber: chapter.section_number,
-		archiveIdentifier,
-	});
+	return invoke('audiobook_resolve_source', { listenUrl, durationMs });
 }

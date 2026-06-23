@@ -8,7 +8,6 @@ use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
 
-mod archive;
 mod commands;
 mod librivox;
 
@@ -49,7 +48,6 @@ pub fn run() {
             storage
                 .run_migrations()
                 .expect("failed to run database migrations");
-            archive::init_tables(&db_path).expect("failed to init archive tables");
             let engine = PlaybackEngine::new(event_emitter);
             app.manage(Mutex::new(engine));
             app.manage(Mutex::new(storage));
@@ -77,7 +75,6 @@ pub fn run() {
             commands::library_remove_from,
             commands::library_clear,
             commands::audiobook_resolve_source,
-            commands::audiobook_get_archive_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

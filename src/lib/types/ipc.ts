@@ -91,5 +91,4 @@ export interface ChapterInfo {
 export interface CatalogDetail {
 	item: CatalogItem;
 	sections: ChapterInfo[];
-	archive_identifier: string | null;
 }

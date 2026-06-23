@@ -16,14 +16,14 @@
 
 	onMount(async () => {
 		try {
-			const [d, c, p] = await Promise.all([
-				listDomains(),
-				countContent('audiobook'),
-				syncProgress('audiobook'),
+			const d = await listDomains();
+			const [counts, progresses] = await Promise.all([
+				Promise.all(d.map((r) => countContent(r.id))),
+				Promise.all(d.map((r) => syncProgress(r.id).catch(() => [] as never[]))),
 			]);
 			domains = d.map((r) => r.display_name);
-			contentCount = c;
-			progressCount = p.length;
+			contentCount = counts.reduce((a, b) => a + b, 0);
+			progressCount = progresses.flat().length;
 		} catch (e) {
 			console.error('failed to load storage stats', e);
 		} finally {
@@ -35,7 +35,8 @@
 		if (clearing) return;
 		clearing = true;
 		try {
-			await clearLibrary('audiobook');
+			const d = await listDomains();
+			await Promise.all(d.map((r) => clearLibrary(r.id)));
 			contentCount = 0;
 			progressCount = 0;
 			clearConfirm = false;
@@ -138,7 +139,7 @@
 		<h2 class="text-lg font-semibold mb-3 text-red-400">Danger Zone</h2>
 		<div class="bg-red-600/10 border border-red-600/20 rounded-lg p-4 space-y-3">
 			<p class="text-sm text-gray-400">
-				Clear all audiobook content and progress from the library. This cannot be undone.
+				Clear all library content and progress. This cannot be undone.
 			</p>
 			{#if clearConfirm}
 				<div class="flex items-center gap-3">
