@@ -67,7 +67,8 @@
 	<!-- Speed selector -->
 	<div class="relative">
 		<button
-		class="p-1.5 rounded-full transition-colors text-xs font-semibold min-w-[2.5rem] {showSpeedMenu ? 'bg-blue-600/20 text-blue-300' : 'hover:bg-white/10'}"
+			onclick={() => (showSpeedMenu = !showSpeedMenu)}
+			class="p-1.5 rounded-full transition-colors text-xs font-semibold min-w-[2.5rem] {showSpeedMenu ? 'bg-blue-600/20 text-blue-300' : 'hover:bg-white/10'}"
 			aria-label="Playback speed"
 		>
 			{speedLabel(player.speed)}
