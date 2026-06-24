@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { CatalogItem, CatalogDetail, ChapterInfo, AudioSource } from '$lib/types/ipc';
+import type { AudioSource } from '$lib/types/ipc';
 
 export async function searchCatalog(
 	query: string,

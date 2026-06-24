@@ -60,7 +60,7 @@ Files using Svelte 5 runes (`$state`, `$derived`, etc.) outside `.svelte` files 
 ### Stores
 | Store | Purpose | Key fields |
 |-------|---------|------------|
-| `playerStore.svelte.ts` | Playback state | `positionMs`, `durationMs`, `speed`, `volume`, `isPlaying`, `isLoaded`, `currentSource`, `currentContentId`, `currentTitle` |
+| `playerStore.svelte.ts` | Playback state | `positionMs`, `durationMs`, `speed`, `volume`, `isPlaying`, `isLoaded`, `currentSource`, `currentContentId`, `currentTitle`, `currentCoverUrl`, `currentChapterIndex`, `currentSections` |
 | `uiStore.svelte.ts` | UI preferences | `sidebarOpen`, `viewMode` |
 
 ### IPC layers
@@ -75,9 +75,8 @@ File naming reflects domain:
 ### Domains
 Domain-specific components live in `src/domains/<domain>/`:
 - `audiobook/DetailView.svelte` — Book detail page (cover, chapters, play/add/remove buttons)
-- `audiobook/NowPlayingView.svelte` — Full player view (unwired from routes)
-- `audiobook/MiniPlayer.svelte` — Compact player bar format
-- `audiobook/LibraryView.svelte` — Grid/list library browser with search filter
+- `audiobook/NowPlayingView.svelte` — Full player view with chapter nav, sleep timer
+- `audiobook/LibraryView.svelte` — Grid/list library browser with search, sort, progress indicators
 
 ### Error boundaries
 Svelte 5 has a **built-in `<svelte:boundary>`** element (verified at `opensrc/.../svelte/src/internal/client/dom/blocks/boundary.js`). It supports:

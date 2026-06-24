@@ -2,15 +2,16 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 import type { DomainItem } from '$lib/types/ipc';
 import { resolve } from '$app/paths';
-
 	let {
 		items = [],
 		onSelect,
 		loading = false,
+		progressMap = new Map<string, number>(),
 	}: {
 		items: DomainItem[];
 		onSelect?: (item: DomainItem) => void;
 		loading?: boolean;
+		progressMap?: Map<string, number>;
 	} = $props();
 
 	let viewMode = $state<'grid' | 'list'>('grid');
@@ -78,6 +79,16 @@ import { resolve } from '$app/paths';
 
 	function sortArrow(field: typeof sortField): string {
 		return sortField === field ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+	}
+
+	function itemProgress(item: DomainItem): number {
+		const pos = progressMap.get(item.content_id) ?? 0;
+		if (!item.duration_ms || item.duration_ms <= 0) return 0;
+		return Math.min(pos / item.duration_ms, 1);
+	}
+
+	function isComplete(item: DomainItem): boolean {
+		return item.duration_ms != null && item.duration_ms > 0 && itemProgress(item) >= 1;
 	}
 </script>
 
@@ -147,10 +158,27 @@ import { resolve } from '$app/paths';
 			{#each filtered as item (item.content_id)}
 				<button
 					onclick={() => onSelect?.(item)}
-					class="group text-left"
+					class="group text-left relative"
 				>
-					<div class="aspect-[3/4] rounded-xl overflow-hidden bg-white/5 mb-2">
+					<div class="aspect-square rounded-xl overflow-hidden bg-white/5 mb-2 relative">
 						<CoverImage url={item.cover_url} title={item.title} class="w-full h-full object-cover" />
+						<!-- Progress indicator -->
+						{#if itemProgress(item) > 0}
+							<div class="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+								<div
+									class="h-full bg-blue-500 transition-all"
+									style="width: {itemProgress(item) * 100}%"
+								></div>
+							</div>
+						{/if}
+						<!-- Completion badge -->
+						{#if isComplete(item)}
+							<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
+									<polygon points="20,6 9,17 4,12 5.5,10.5 9,14 18.5,4.5" />
+								</svg>
+							</div>
+						{/if}
 					</div>
 					<h3 class="text-sm font-medium truncate group-hover:text-blue-400 transition-colors">
 						{item.title || 'Untitled'}
@@ -164,22 +192,24 @@ import { resolve } from '$app/paths';
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
+						<th class="w-12 px-2 py-3"></th>
 						<th
 							onclick={() => handleSort('title')}
-							class="text-left px-4 py-3 font-medium cursor-pointer hover:text-white select-none"
+							class="text-left px-2 py-3 font-medium cursor-pointer hover:text-white select-none"
 						>Title{sortArrow('title')}</th>
 						<th
 							onclick={() => handleSort('author')}
-							class="text-left px-4 py-3 font-medium cursor-pointer hover:text-white select-none hidden sm:table-cell"
+							class="text-left px-2 py-3 font-medium cursor-pointer hover:text-white select-none hidden sm:table-cell"
 						>Author{sortArrow('author')}</th>
 						<th
 							onclick={() => handleSort('duration_ms')}
-							class="text-right px-4 py-3 font-medium cursor-pointer hover:text-white select-none hidden md:table-cell"
+							class="text-right px-2 py-3 font-medium cursor-pointer hover:text-white select-none hidden md:table-cell"
 						>Duration{sortArrow('duration_ms')}</th>
 						<th
 							onclick={() => handleSort('added_at')}
-							class="text-right px-4 py-3 font-medium cursor-pointer hover:text-white select-none hidden lg:table-cell"
+							class="text-right px-2 py-3 font-medium cursor-pointer hover:text-white select-none hidden lg:table-cell"
 						>Added{sortArrow('added_at')}</th>
+						<th class="w-32 px-2 py-3 hidden md:table-cell"></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -188,13 +218,35 @@ import { resolve } from '$app/paths';
 							onclick={() => onSelect?.(item)}
 							class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
 						>
-							<td class="px-4 py-3 font-medium">{item.title || 'Untitled'}</td>
-							<td class="px-4 py-3 text-gray-400 hidden sm:table-cell">{item.author || 'Unknown'}</td>
-							<td class="px-4 py-3 text-gray-500 text-right hidden md:table-cell">
+							<td class="px-2 py-2">
+								<div class="w-10 h-10 rounded-lg overflow-hidden bg-white/10 shrink-0">
+									<CoverImage url={item.cover_url} title={item.title} class="w-full h-full object-cover" />
+								</div>
+							</td>
+							<td class="px-2 py-3">
+								<div class="font-medium truncate max-w-40">{item.title || 'Untitled'}</div>
+								{#if itemProgress(item) > 0}
+									<div class="mt-1 w-full h-1 bg-white/10 rounded-full overflow-hidden max-w-32">
+										<div
+											class="h-full bg-blue-500 rounded-full transition-all"
+											style="width: {itemProgress(item) * 100}%"
+										></div>
+									</div>
+								{/if}
+							</td>
+							<td class="px-2 py-3 text-gray-400 truncate max-w-24 hidden sm:table-cell">{item.author || 'Unknown'}</td>
+							<td class="px-2 py-3 text-gray-500 text-right hidden md:table-cell whitespace-nowrap">
 								{item.duration_ms != null ? `${Math.floor(item.duration_ms / 60000)} min` : '—'}
 							</td>
-							<td class="px-4 py-3 text-gray-500 text-right hidden lg:table-cell whitespace-nowrap">
+							<td class="px-2 py-3 text-gray-500 text-right hidden lg:table-cell whitespace-nowrap">
 								{formatDate(item.added_at)}
+							</td>
+							<td class="px-2 py-3 text-right hidden md:table-cell">
+								{#if isComplete(item)}
+									<span class="text-xs text-green-400">Completed</span>
+								{:else if itemProgress(item) > 0}
+									<span class="text-xs text-blue-400">{Math.round(itemProgress(item) * 100)}%</span>
+								{/if}
 							</td>
 						</tr>
 					{/each}

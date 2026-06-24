@@ -60,7 +60,7 @@
 						onclick={() => onAddToLibrary?.()}
 						disabled={adding}
 						class="px-5 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
-					>
+						>
 						{adding ? 'Adding…' : 'Add to Library'}
 					</button>
 				{/if}
@@ -68,16 +68,32 @@
 		</div>
 
 		{#if savedProgress > 0}
-			<p class="text-xs text-gray-500 mt-2">
-				Saved progress: <TimeDisplay seconds={Math.floor(savedProgress / 1000)} />
-			</p>
+			<div class="mt-3 space-y-1">
+				<div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+					<div
+						class="h-full bg-blue-500 rounded-full transition-all"
+						style="width: {Math.min((savedProgress / ((book.item.total_time_secs ?? 1) * 1000)) * 100, 100)}%"
+					></div>
+				</div>
+			</div>
 		{/if}
 
 		<!-- Metadata -->
 		<div class="mt-4 space-y-1 text-xs text-gray-500">
 			<p>Publisher: LibriVox</p>
+			{#if book.item.language}
+				<p>Language: {book.item.language}</p>
+			{/if}
 			<p>Total time: {book.item.total_time_secs != null ? `${Math.floor(book.item.total_time_secs / 60)} min` : '—'}</p>
 			<p>Sections: {book.item.num_sections ?? '—'}</p>
+			{#if book.item.url_librivox}
+				<p>
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<a href={book.item.url_librivox} target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">
+					View on LibriVox ↗
+				</a>
+				</p>
+			{/if}
 		</div>
 	</div>
 </div>

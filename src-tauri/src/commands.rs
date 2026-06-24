@@ -216,6 +216,8 @@ pub struct CatalogItem {
     pub total_time_secs: Option<i64>,
     pub num_sections: Option<u32>,
     pub cover_url: Option<String>,
+    pub language: Option<String>,
+    pub url_librivox: Option<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -248,6 +250,8 @@ impl From<librivox::LibrivoxBook> for CatalogItem {
             total_time_secs: book.totaltimesecs,
             num_sections,
             cover_url: book.coverart_jpg.clone(),
+            language: book.language.clone(),
+            url_librivox: book.url_librivox.clone(),
         }
     }
 }

@@ -78,6 +78,8 @@ export interface CatalogItem {
 	total_time_secs: number | null;
 	num_sections: number | null;
 	cover_url: string | null;
+	language: string | null;
+	url_librivox: string | null;
 }
 
 export interface ChapterInfo {
