@@ -173,6 +173,7 @@ onMount(() => {
 				</button>
 			{/if}
 		</div>
+	</div>
 
 	<!-- Chapter navigation -->
 	{#if playerState.currentSections.length > 0}
@@ -197,5 +198,4 @@ onMount(() => {
 			</div>
 		</section>
 	{/if}
-	</div>
 </div>

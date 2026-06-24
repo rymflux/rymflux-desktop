@@ -83,14 +83,20 @@
 				<div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
 			</div>
 		{:else if cards.length === 0}
-			<p class="text-gray-500 text-sm">
+			<p class="text-gray-500 text-sm mb-4">
 				No items in progress. Search the catalog to find an audiobook.
 			</p>
+			<a
+				href={resolve('/search')}
+				class="inline-block px-5 py-2 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+			>
+				Browse Catalog
+			</a>
 		{:else}
 			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each cards as card (card.contentId)}
 					<div class="bg-white/5 rounded-xl overflow-hidden border border-white/10 flex flex-col">
-						<div class="aspect-[3/4] bg-white/5">
+						<div class="aspect-square bg-white/5">
 							<CoverImage url={card.coverUrl} title={card.title} class="w-full h-full object-cover" />
 						</div>
 						<div class="p-3 flex flex-col gap-2 flex-1">
