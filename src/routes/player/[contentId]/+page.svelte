@@ -6,7 +6,7 @@
 	import NowPlayingView from '$src/domains/audiobook/NowPlayingView.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { onMount } from 'svelte';
-import type { CatalogDetail } from '$lib/types/ipc';
+import type { CatalogDetail, ChapterInfo } from '$lib/types/ipc';
 import { resolve } from '$app/paths';
 
 	let { params } = $props();
@@ -43,20 +43,45 @@ let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContent
 		loading = false;
 	});
 
+// Compute cumulative chapter offsets (ms from start of book to start of each chapter)
+function getChapterOffsets(sections: ChapterInfo[]): number[] {
+	const offsets: number[] = [];
+	let cum = 0;
+	for (const s of sections) {
+		offsets.push(cum);
+		cum += (s.playtime_secs ?? 0) * 1000;
+	}
+	return offsets;
+}
 
+// Find which chapter contains the given cumulative position
+function findChapterIndex(offsets: number[], positionMs: number): number {
+	for (let i = offsets.length - 1; i >= 0; i--) {
+		if (positionMs >= offsets[i]) return i;
+	}
+	return 0;
+}
 
 	async function handlePlay(chapterIndex?: number) {
 		if (!book) return;
 		const sections = book.sections;
-		const idx = chapterIndex ?? 0;
+		const offsets = getChapterOffsets(sections);
+
+		// Find which chapter to play — when resuming, find the chapter containing saved progress
+		const idx = chapterIndex ?? (savedProgress > 0 ? findChapterIndex(offsets, savedProgress) : 0);
 		const section = sections[idx];
 		if (!section) return;
+
 		const source = await resolveSource(section.listen_url, (section.playtime_secs ?? 0) * 1000);
-		// Seek to saved progress with 3s rewind when continuing
-		const startMs = savedProgress > 0 && chapterIndex === undefined
+
+		// Seek to saved progress with 3s rewind, then adjust to intra-chapter position
+		const chapterOffset = offsets[idx];
+		const rawStartMs = savedProgress > 0 && chapterIndex === undefined
 			? Math.max(0, savedProgress - 3000)
 			: 0;
-		setCurrentTrack(source, params.contentId, book.item.title, 'audiobook');
+		const startMs = Math.max(0, rawStartMs - chapterOffset);
+
+		setCurrentTrack(source, params.contentId, book.item.title, 'audiobook', book.item.cover_url, idx, book.sections);
 		engine?.play(source, params.contentId, startMs);
 	}
 

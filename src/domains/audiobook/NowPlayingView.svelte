@@ -6,6 +6,8 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { getPlayerState } from '$lib/stores/playerStore.svelte';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
+import { resolveSource } from '$lib/ipc/catalog';
+import { setCurrentTrack } from '$lib/stores/playerStore.svelte';
 import { onMount } from 'svelte';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	let engine = getAudioEngine()!;
@@ -85,19 +87,24 @@ onMount(() => {
 	function handleVolumeChange(v: number) {
 		engine.setVolume(v);
 	}
+
+	async function handleChapterClick(i: number) {
+		const sections = playerState.currentSections;
+		const section = sections[i];
+		if (!section || !playerState.currentContentId) return;
+		const source = await resolveSource(section.listen_url, (section.playtime_secs ?? 0) * 1000);
+		setCurrentTrack(source, playerState.currentContentId, playerState.currentTitle, playerState.currentDomainId, playerState.currentCoverUrl, i, playerState.currentSections);
+		engine.play(source, playerState.currentContentId, 0);
+	}
 </script>
 
 <div class="max-w-2xl mx-auto space-y-6">
 	<!-- Large cover art + title -->
 	<div class="text-center">
-		<div class="w-48 h-48 mx-auto rounded-xl overflow-hidden bg-white/5 mb-4">
-			<CoverImage
-				url={playerState.currentSource?.uri}
-				title={playerState.currentTitle}
-				class="w-full h-full object-cover"
-			/>
+		<div class="w-48 h-48 mx-auto rounded-2xl overflow-hidden bg-white/5 mb-4">
+			<CoverImage url={playerState.currentCoverUrl} title={playerState.currentTitle} class="w-full h-full object-cover" />
 		</div>
-		<h1 class="text-xl font-bold">{playerState.currentTitle || 'Now Playing'}</h1>
+		<h2 class="text-xl font-semibold truncate">{playerState.currentTitle || 'No title'}</h2>
 	</div>
 
 	<!-- Seek bar -->
@@ -166,5 +173,29 @@ onMount(() => {
 				</button>
 			{/if}
 		</div>
+
+	<!-- Chapter navigation -->
+	{#if playerState.currentSections.length > 0}
+		<section>
+			<h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Chapters</h3>
+			<div class="space-y-1 max-h-60 overflow-y-auto">
+				{#each playerState.currentSections as section, i (section.section_number)}
+					<button
+						onclick={() => handleChapterClick(i)}
+						class="w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left {i === playerState.currentChapterIndex ? 'bg-blue-600/20 text-blue-300 border border-blue-600/30' : 'hover:bg-white/5 text-gray-300'}"
+					>
+						<span class="text-xs text-gray-500 w-6 shrink-0 text-right">{section.section_number}</span>
+						<span class="flex-1 truncate text-sm">{section.title || 'Chapter ' + section.section_number}</span>
+						{#if section.playtime_secs}
+							<TimeDisplay seconds={section.playtime_secs} />
+						{/if}
+						{#if i === playerState.currentChapterIndex}
+							<span class="w-2 h-2 rounded-full bg-blue-400 shrink-0" title="Now playing"></span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+		</section>
+	{/if}
 	</div>
 </div>

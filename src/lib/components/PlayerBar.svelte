@@ -47,7 +47,7 @@
 		>
 			<div class="w-8 h-8 rounded overflow-hidden bg-white/10 shrink-0">
 				<CoverImage
-					url={playerState.currentSource?.uri}
+					url={playerState.currentCoverUrl}
 					title={playerState.currentTitle}
 					class="w-full h-full object-cover"
 				/>

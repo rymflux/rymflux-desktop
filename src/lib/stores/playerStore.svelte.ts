@@ -1,4 +1,4 @@
-import type { PlaybackState, AudioSource } from '$lib/types/ipc';
+import type { PlaybackState, AudioSource, ChapterInfo } from '$lib/types/ipc';
 
 let positionMs = $state(0);
 let durationMs = $state(0);
@@ -9,6 +9,9 @@ let isLoaded = $state(false);
 let currentSource = $state<AudioSource | null>(null);
 let currentContentId = $state<string | null>(null);
 let currentDomainId = $state<string>('');
+let currentCoverUrl = $state<string | null>(null);
+let currentChapterIndex = $state<number>(0);
+let currentSections = $state<ChapterInfo[]>([]);
 let currentTitle = $state('');
 
 const remainingMs = $derived(durationMs - positionMs);
@@ -40,6 +43,15 @@ export function getPlayerState() {
 		get currentContentId() {
 			return currentContentId;
 		},
+		get currentCoverUrl() {
+			return currentCoverUrl;
+		},
+		get currentChapterIndex() {
+			return currentChapterIndex;
+		},
+		get currentSections() {
+			return currentSections;
+		},
 		get currentDomainId() {
 			return currentDomainId;
 		},
@@ -69,9 +81,19 @@ export function setCurrentTrack(
 	contentId: string,
 	title?: string,
 	domainId?: string,
+	coverUrl?: string | null,
+	chapterIndex?: number,
+	sections?: ChapterInfo[],
 ) {
 	currentSource = source;
 	currentContentId = contentId;
 	if (title) currentTitle = title;
 	if (domainId) currentDomainId = domainId;
+	if (coverUrl !== undefined) currentCoverUrl = coverUrl;
+	if (chapterIndex !== undefined) currentChapterIndex = chapterIndex;
+	if (sections) currentSections = sections;
+}
+
+export function setChapterIndex(i: number) {
+	currentChapterIndex = i;
 }

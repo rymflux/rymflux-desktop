@@ -1,93 +1,63 @@
-name: CI - Desktop
+name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
-      # Both repos checked out as siblings so Cargo.toml's path = "../../rymflux-core" resolves.
-      #
-      #   $GITHUB_WORKSPACE/
-      #     rymflux-core/       ← from rymflux/rymflux-core (public)
-      #     rymflux-desktop/    ← from rymflux/rymflux-desktop (this repo)
-
       - uses: actions/checkout@v4
-        with:
-          path: rymflux-desktop
 
-      - name: Checkout rymflux-core (sibling for path dep)
-        uses: actions/checkout@v4
-        with:
-          repository: rymflux/rymflux-core
-          path: rymflux-core
-
-      # ── Tauri v2 system dependencies ──
-      - name: Install system deps (Tauri v2)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            libwebkit2gtk-4.1-dev \
-            libssl-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libasound2-dev
-
-      # ── Rust backend ──
-      - name: Install Rust toolchain
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rymflux-desktop/src-tauri
-
-      - name: cargo check
-        working-directory: rymflux-desktop/src-tauri
-        run: cargo check
-
-      - name: cargo clippy
-        working-directory: rymflux-desktop/src-tauri
-        run: cargo clippy -- -D warnings
-
-      - name: cargo test
-        working-directory: rymflux-desktop/src-tauri
-        run: cargo test
-
-      # ── Frontend ──
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - name: Use Node.js 22
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: rymflux-desktop/pnpm-lock.yaml
+          node-version: '20'
+          cache: 'pnpm'
 
-      - name: pnpm install
-        working-directory: rymflux-desktop
-        run: pnpm install --frozen-lockfile
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
 
-      - name: pnpm check (svelte-check)
-        working-directory: rymflux-desktop
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install pnpm dependencies
+        run: pnpm install
+
+      - name: Check frontend (pnpm check)
         run: pnpm check
 
-      - name: pnpm build (vite)
-        working-directory: rymflux-desktop
+      - name: Build frontend (pnpm build)
         run: pnpm build
+
+      - name: Check Rust (cargo check)
+        working-directory: src-tauri
+        run: cargo check
+
+      - name: Lint Rust (cargo clippy)
+        working-directory: src-tauri
+        run: cargo clippy -- -D warnings
+
+      - name: Test Rust (cargo test)
+        working-directory: src-tauri
+        run: cargo test

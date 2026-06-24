@@ -14,7 +14,7 @@ Before implementing anything:
 
 ## Planning & Documentation
 
-- **`PLAN.md`** — Master implementation plan. Contains architecture, DDL, API surfaces, and test requirements. **Consult this first** before any implementation step. When the plan says X but the real API says Y, fix the plan with a `⚠️` callout so it stays accurate.
+- **`PLAN.md`** — Master  plan. Contains architecture, DDL, API surfaces, and test requirements. **Consult this first** before any implementation step. When the plan says X but the real API says Y, fix the plan with a `⚠️` callout so it stays accurate.
 - **`IMPLEMENTATION_JOURNAL.md`** — Chronological log of plan divergences, API corrections, architecture decisions, and testing discoveries. Append to this after each completed step. Use it to avoid repeating mistakes and to know which parts of the plan are stale.
 
 ⏰ **After finishing each step, append to `IMPLEMENTATION_JOURNAL.md`** even if no divergences occurred — a "no issues found" entry is still useful for future agents.
@@ -163,8 +163,68 @@ When a step requires a Rust library API you haven't used before (e.g., Symphonia
 3. **If the plan exists, verify every API detail against vendor.** The plan may be aspirational.
 4. **Cross-reference** with `cargo doc` for navigation-friendly exploration.
 
-### ⚠️ Code-searcher scope
-The `code-searcher` agent can only search files **within the project directory**. It cannot access sibling crates (like `../rymflux-core/`). To search the core crate, use `basher` with `grep`/`rg` commands directly.
+### CodeGraph MCP Integration (Knowledge Graph for this Project)
+
+**CodeGraph** provides a **pre-indexed, auto-syncing knowledge graph** of the entire codebase using Tree-sitter. It dramatically reduces tool calls, file reads, and token usage by giving agents direct access to symbols, call graphs, dependencies, routes, and blast radius/impact analysis.
+
+#### Status
+- ✅ MCP server is installed and configured (`codegraph install` has been run).
+- ✅ Project index exists (`.codegraph/` directory present).
+- The graph **auto-syncs** on file changes via native watchers — no manual `sync` needed in normal use.
+
+#### How to Use CodeGraph (Primary Instructions for Agents)
+
+**Preferred workflow:**
+1. **Use CodeGraph tools first** for any structural, architectural, or exploration question.
+2. **Never start with mass grep / find / read loops** — this duplicates work the graph already performed.
+3. Treat content returned by CodeGraph as **already read and authoritative** (it includes line-numbered source).
+
+**Main Tool (recommended for almost everything):**
+- `codegraph_explore` — The go-to tool.
+  - Query with symbols, functions, classes, files, or natural language questions.
+  - Returns: relevant source code (verbatim, grouped by file), call paths between symbols (including dynamic dispatch), and blast-radius / impact summary.
+  - Perfect for: "How does X work?", "What calls Y?", "Trace the flow from A to B", "What happens if I change Z?"
+
+**Other useful tools:**
+- `codegraph_node` — Get full details on a specific symbol/file + its callers/dependents.
+- `codegraph_search` — Full-text + semantic search across the graph.
+- `codegraph_callers` — Quick caller analysis.
+
+**CLI fallbacks** (for sub-agents or non-MCP contexts):
+```bash
+codegraph explore "<query or symbol>"
+codegraph node <symbol-or-file>
+```
+
+#### Best Practices
+
+- **Start every coding/architecture task** by calling `codegraph_explore` with a precise query.
+- For changes: Always explore the target + its callers/blast radius **before** editing.
+- After edits: The graph auto-syncs. If you see a staleness banner on a file, read it directly for the absolute latest version.
+- Cross-language / framework routes are supported (e.g., API routes to handlers).
+- iOS / React Native bridging is handled where applicable.
+
+#### When to Fall Back
+- Use regular `read_file`, `grep`, etc., only for:
+  - Very recent unsynced edits (rare).
+  - Content outside the indexed languages.
+  - Verification when explicitly needed.
+
+#### Commands You Can Run (via shell tools)
+
+- `codegraph status` → Check index health and pending syncs.
+- `codegraph init` → (Re)build index if needed.
+- `codegraph explore ...` → Direct CLI access.
+
+#### Troubleshooting
+- No tools visible? Ensure `.codegraph/` exists in the project root and restart the agent.
+- Stale index? Run `codegraph status` or `codegraph init`.
+- Remove: `codegraph uninit` (project) or `codegraph uninstall` (global agent config).
+
+**CodeGraph is the fastest and most accurate way to understand and modify this codebase.** Prioritize its tools to stay efficient and token-light.
+
+---
+
 
 ## Framework Source of Truth (Svelte/SvelteKit)
 
