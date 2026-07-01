@@ -3,15 +3,9 @@ use rymflux_core::commands;
 use rymflux_core::storage::StorageEngine;
 use rymflux_core::types::{
     AudioSource, ContentIdentity, ContentItem, DomainId, DomainRecord, PlaybackState,
-    ProgressRecord,
+    ProgressRecord, ProgressWriteContext,
 };
 use std::sync::Mutex;
-
-/// Strip the domain prefix from a content ID to get the raw catalog ID.
-/// e.g. "librivox_123" → "123", plain "123" → "123".
-fn strip_catalog_prefix(id: &str) -> &str {
-    id.strip_prefix("librivox_").unwrap_or(id)
-}
 
 // ── Playback ─────────────────────────────────────────────────────────────────
 
@@ -35,11 +29,20 @@ pub fn pause_audio(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
     content_id: String,
+    chapter_index: Option<u32>,
+    chapter_offset_ms: Option<u64>,
 ) -> Result<PlaybackState, String> {
     let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
-    commands::playback::pause(&storage, &mut engine, &domain, &content_id)
+    let ctx = match (chapter_index, chapter_offset_ms) {
+        (Some(index), Some(offset)) => Some(ProgressWriteContext {
+            chapter_index: index,
+            chapter_offset_ms: offset,
+        }),
+        _ => None,
+    };
+    commands::playback::pause(&storage, &mut engine, &domain, &content_id, ctx.as_ref())
         .map_err(|e| e.to_string())
 }
 
@@ -50,12 +53,28 @@ pub fn seek_audio(
     domain_id: String,
     content_id: String,
     position_ms: u64,
+    chapter_index: Option<u32>,
+    chapter_offset_ms: Option<u64>,
 ) -> Result<PlaybackState, String> {
     let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
-    commands::playback::seek(&storage, &mut engine, &domain, &content_id, position_ms)
-        .map_err(|e| e.to_string())
+    let ctx = match (chapter_index, chapter_offset_ms) {
+        (Some(index), Some(offset)) => Some(ProgressWriteContext {
+            chapter_index: index,
+            chapter_offset_ms: offset,
+        }),
+        _ => None,
+    };
+    commands::playback::seek(
+        &storage,
+        &mut engine,
+        &domain,
+        &content_id,
+        position_ms,
+        ctx.as_ref(),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -90,11 +109,21 @@ pub fn stop_audio(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
     content_id: String,
+    chapter_index: Option<u32>,
+    chapter_offset_ms: Option<u64>,
 ) -> Result<PlaybackState, String> {
     let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
-    commands::playback::stop(&storage, &mut engine, &domain, &content_id).map_err(|e| e.to_string())
+    let ctx = match (chapter_index, chapter_offset_ms) {
+        (Some(index), Some(offset)) => Some(ProgressWriteContext {
+            chapter_index: index,
+            chapter_offset_ms: offset,
+        }),
+        _ => None,
+    };
+    commands::playback::stop(&storage, &mut engine, &domain, &content_id, ctx.as_ref())
+        .map_err(|e| e.to_string())
 }
 
 // ── Library ──────────────────────────────────────────────────────────────────
@@ -186,10 +215,28 @@ pub fn progress_set(
     domain_id: String,
     content_id: String,
     position_ms: i64,
+    chapter_index: Option<u32>,
+    chapter_offset_ms: Option<u64>,
+    speed: Option<f32>,
 ) -> Result<(), String> {
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
-    commands::progress::set(&storage, &domain, &content_id, position_ms).map_err(|e| e.to_string())
+    let ctx = match (chapter_index, chapter_offset_ms) {
+        (Some(index), Some(offset)) => Some(ProgressWriteContext {
+            chapter_index: index,
+            chapter_offset_ms: offset,
+        }),
+        _ => None,
+    };
+    commands::progress::set(
+        &storage,
+        &domain,
+        &content_id,
+        position_ms,
+        ctx.as_ref(),
+        speed,
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -202,130 +249,56 @@ pub fn progress_sync(
     commands::progress::sync(&storage, &domain).map_err(|e| e.to_string())
 }
 
-use crate::librivox;
-use std::time::SystemTime;
+use std::sync::LazyLock;
+use std::time::{Duration, SystemTime};
 
-// ── Catalog types (frontend-facing) ─────────────────────────────────────────
+// ── Generic HTTP proxy (domain-agnostic passthrough) ──────────────────────
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct CatalogItem {
-    pub id: String,
-    pub title: String,
-    pub author: String,
-    pub description: String,
-    pub total_time_secs: Option<i64>,
-    pub num_sections: Option<u32>,
-    pub cover_url: Option<String>,
-    pub language: Option<String>,
-    pub url_librivox: Option<String>,
-}
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .user_agent("rymflux-audiobook-player/0.1")
+        .build()
+        .expect("failed to build HTTP client")
+});
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct CatalogDetail {
-    pub item: CatalogItem,
-    pub sections: Vec<ChapterInfo>,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct ChapterInfo {
-    pub id: String,
-    pub section_number: u32,
-    pub title: String,
-    pub listen_url: String,
-    pub playtime_secs: Option<u64>,
-}
-
-impl From<librivox::LibrivoxBook> for CatalogItem {
-    fn from(book: librivox::LibrivoxBook) -> Self {
-        let author = book
-            .authors
-            .first()
-            .map(|a| format!("{} {}", a.first_name, a.last_name))
-            .unwrap_or_default();
-        let num_sections = book.num_sections.as_deref().and_then(|s| s.parse().ok());
-        CatalogItem {
-            id: book.id,
-            title: book.title,
-            author,
-            description: book.description,
-            total_time_secs: book.totaltimesecs,
-            num_sections,
-            cover_url: book.coverart_jpg.clone(),
-            language: book.language.clone(),
-            url_librivox: book.url_librivox.clone(),
-        }
+#[tauri::command]
+pub async fn http_get(url: String) -> Result<String, String> {
+    let resp = HTTP_CLIENT
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("HTTP request failed: {e}"))?;
+    if !resp.status().is_success() {
+        return Err(format!("HTTP {}: {}", resp.status(), url));
     }
-}
-// ── Catalog commands ─────────────────────────────────────────────────────────
-
-#[tauri::command]
-pub async fn catalog_search(
-    query: String,
-    search_type: Option<String>,
-    limit: Option<u32>,
-    offset: Option<u32>,
-) -> Result<Vec<CatalogItem>, String> {
-    let limit = limit.unwrap_or(20);
-    let offset = offset.unwrap_or(0);
-    let use_author = search_type.as_deref() == Some("author");
-    let books = if use_author {
-        librivox::search_by_author(&query, limit, offset).await?
-    } else {
-        librivox::search_by_title(&query, limit, offset).await?
-    };
-    Ok(books.into_iter().map(|b| b.into()).collect())
-}
-#[tauri::command]
-pub async fn catalog_get_book(id: String) -> Result<CatalogDetail, String> {
-    let book = librivox::get_book(&id).await?;
-    let sections = book
-        .sections
-        .as_deref()
-        .unwrap_or_default()
-        .iter()
-        .map(|s| {
-            let sec_num: u32 = s.section_number.parse().unwrap_or(0);
-            let playtime_secs = s.playtime.as_deref().and_then(|p| p.parse().ok());
-            ChapterInfo {
-                id: s.id.clone(),
-                section_number: sec_num,
-                title: s.title.clone(),
-                listen_url: s.listen_url.clone(),
-                playtime_secs,
-            }
-        })
-        .collect();
-    Ok(CatalogDetail {
-        item: book.into(),
-        sections,
-    })
+    resp.text().await.map_err(|e| format!("Failed to read response: {e}"))
 }
 
+// ── Generic library store command (domain-agnostic) ────────────────────────
+
 #[tauri::command]
-pub async fn library_add_from_catalog(
+pub fn library_store_item(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
-    catalog_id: String,
+    content_item: ContentItem,
+    identity_source_id: String,
+    identity_duration_ms: Option<i64>,
 ) -> Result<(), String> {
-    let book = librivox::get_book(strip_catalog_prefix(&catalog_id)).await?;
-
-    // Build content item
-    let domain_id = DomainId::from("audiobook");
-    let content_item = librivox::book_to_content_item(&book);
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-
-    // Store the content identity
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
+
     let identity = ContentIdentity {
-        identity_id: format!("librivox_identity_{}", book.id),
+        identity_id: rymflux_core::identity::derive_identity_id(&identity_source_id),
         structural_fingerprint: None,
-        source_id: Some(format!("librivox_{}", book.id)),
+        source_id: Some(identity_source_id),
         file_path: None,
         file_name: None,
         file_size: None,
-        duration_ms: book.totaltimesecs,
-        domain_id: domain_id.clone(),
+        duration_ms: identity_duration_ms,
+        domain_id: content_item.domain_id.clone(),
         first_seen_at: now.to_string(),
         last_seen_at: now.to_string(),
     };
@@ -336,15 +309,4 @@ pub async fn library_add_from_catalog(
         .upsert_content(&content_item)
         .map_err(|e| e.to_string())?;
     Ok(())
-}
-#[tauri::command]
-pub async fn audiobook_resolve_source(
-    listen_url: String,
-    duration_ms: u64,
-) -> Result<AudioSource, String> {
-    Ok(AudioSource {
-        uri: listen_url,
-        duration_ms,
-        mime_type: "audio/mpeg".to_string(),
-    })
 }

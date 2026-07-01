@@ -9,7 +9,6 @@ use tauri::Emitter;
 use tauri::Manager;
 
 mod commands;
-mod librivox;
 
 struct DesktopEventEmitter {
     app_handle: Arc<tauri::AppHandle>,
@@ -31,6 +30,7 @@ impl EventEmitter for DesktopEventEmitter {
 pub fn run() {
     rymflux_core::init_logging();
     tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let app_handle = Arc::new(app.handle().clone());
@@ -69,12 +69,10 @@ pub fn run() {
             commands::progress_get,
             commands::progress_set,
             commands::progress_sync,
-            commands::catalog_search,
-            commands::catalog_get_book,
-            commands::library_add_from_catalog,
+            commands::http_get,
+            commands::library_store_item,
             commands::library_remove_from,
             commands::library_clear,
-            commands::audiobook_resolve_source,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

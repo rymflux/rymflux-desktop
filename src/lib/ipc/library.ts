@@ -1,5 +1,18 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ContentItem, DomainRecord, ProgressRecord, DomainItem } from '$lib/types/ipc';
+import type { ContentItem, DomainRecord, ProgressRecord, DomainItem } from '@rymflux/shell';
+
+/** Store a ContentItem (built by a domain) into the library database. */
+export async function storeItem(
+	contentItem: ContentItem,
+	identitySourceId: string,
+	identityDurationMs: number | null,
+): Promise<void> {
+	await invoke('library_store_item', {
+		contentItem,
+		identitySourceId,
+		identityDurationMs,
+	});
+}
 
 /** Transform raw core ContentItem into frontend-friendly DomainItem */
 function toDomainItem(raw: Record<string, unknown>): DomainItem {
@@ -68,8 +81,17 @@ export async function setProgress(
 	domainId: string,
 	contentId: string,
 	positionMs: number,
+	ctx?: { chapter_index: number; chapter_offset_ms: number },
+	speed?: number,
 ): Promise<void> {
-	return invoke('progress_set', { domainId, contentId, positionMs });
+	return invoke('progress_set', {
+		domainId,
+		contentId,
+		positionMs,
+		chapterIndex: ctx?.chapter_index ?? null,
+		chapterOffsetMs: ctx?.chapter_offset_ms ?? null,
+		speed: speed ?? null,
+	});
 }
 
 export async function syncProgress(

@@ -8,9 +8,3 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-IMPLEMENTATION_JOURNAL.md
-src-tauri/vendor/
-PLAN.md
-REDESIGN.md
-src-tauri/target

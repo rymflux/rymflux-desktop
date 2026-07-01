@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { listLibrary, syncProgress } from '$lib/ipc/library';
-	import type { DomainItem } from '$lib/types/ipc';
-	import LibraryView from '$src/domains/audiobook/LibraryView.svelte';
+	import { getDomainRegistry } from '@rymflux/shell';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 
 	let { params } = $props();
-	let items = $state<DomainItem[]>([]);
+	let items = $state<import('@rymflux/shell').DomainItem[]>([]);
 	let progressMap = $state<Map<string, number>>(new Map());
 	let loading = $state(true);
 
@@ -28,13 +27,22 @@
 		}
 	});
 
-	function handleSelect(item: DomainItem) {
+	function handleSelect(item: import('@rymflux/shell').DomainItem) {
 		goto(resolve(`/player/${item.content_id}`));
 	}
+
+	let registry = getDomainRegistry();
+	let domainView = registry.get(params.domain)?.views.library;
 </script>
 
 <div class="max-w-4xl mx-auto">
 	<h1 class="text-2xl font-bold capitalize mb-6">{params.domain}</h1>
 
-	<LibraryView {items} {loading} {progressMap} onSelect={handleSelect} />
+	{#each [domainView] as Component}
+		{#if Component}
+			<Component {items} {loading} {progressMap} onSelect={handleSelect}></Component>
+		{:else}
+			<p class="text-gray-500">Unknown domain: {params.domain}</p>
+		{/if}
+	{/each}
 </div>

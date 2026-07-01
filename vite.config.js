@@ -1,21 +1,30 @@
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
-import tailwindcss from "@tailwindcss/vite";
+// @ts-expect-error type error without @types/node package
+import process from "node:process";
+// @ts-expect-error type error without @types/node package
+import path from "node:path";
 const host = process.env.TAURI_DEV_HOST;
 
-// https://vitejs.dev/config/
-export default defineConfig(async () => ({
+// https://vite.dev/config/
+export default defineConfig(() => ({
   plugins: [tailwindcss(), sveltekit()],
+  resolve: {
+    alias: {
+      '@rymflux/domain-audiobook': path.resolve('../rymflux-audiobook/src/lib'),
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
-  // 1. prevent vite from obscuring rust errors
+  // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
   // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
+    host: host || "127.0.0.1",
     hmr: host
       ? {
           protocol: "ws",
@@ -24,8 +33,14 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      // 3. tell vite to ignore watching `src-tauri`
+      // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
+    },
+    fs: {
+      allow: [
+        process.cwd() + '/../rymflux-shell',
+        process.cwd() + '/../rymflux-audiobook',
+      ],
     },
   },
 }));

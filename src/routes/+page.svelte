@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { getPlayerState } from '$lib/stores/playerStore.svelte';
+	import { getPlayerState, CoverImage } from '@rymflux/shell';
 	import { syncProgress, getLibraryDetail, listDomains } from '$lib/ipc/library';
-	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -130,3 +129,4 @@
 		{/if}
 	</section>
 </div>
+<style></style>

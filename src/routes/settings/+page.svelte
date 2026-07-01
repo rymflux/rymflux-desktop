@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getUiState } from '$lib/stores/uiStore.svelte';
-	import { getPlayerState } from '$lib/stores/playerStore.svelte';
+	import { getUiState, getPlayerState } from '@rymflux/shell';
 	import { listDomains, countContent, syncProgress, clearLibrary } from '$lib/ipc/library';
+	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { onMount } from 'svelte';
 
 	let ui = getUiState();
@@ -46,6 +46,48 @@
 			clearing = false;
 		}
 	}
+
+	// ── Developer dashboard ────────────────────────────────────────────────
+
+	let engine = getAudioEngine();
+	let ipcLatency = $state<number | null>(null);
+	let ipcTesting = $state(false);
+	let devExpanded = $state(false);
+
+	async function testIpcLatency() {
+		if (!engine || ipcTesting) return;
+		ipcTesting = true;
+		const start = performance.now();
+		try {
+			await engine.getState();
+			ipcLatency = performance.now() - start;
+		} catch {
+			ipcLatency = -1;
+		} finally {
+			ipcTesting = false;
+		}
+	}
+
+	type EventLogEntry = { ts: number; type: 'progress' | 'finished' | 'error'; msg: string };
+	let eventLog = $state<EventLogEntry[]>([]);
+	let logExpanded = $state(false);
+
+	onMount(() => {
+		if (!engine) return;
+		const unlisteners: (() => void)[] = [];
+		import('@tauri-apps/api/event').then(({ listen }) => {
+			listen<import('@rymflux/shell').PlaybackState>('audio:progress', (e) => {
+				eventLog = [...eventLog.slice(-99), { ts: performance.now(), type: 'progress' as const, msg: `pos=${Math.round(e.payload.position_ms / 1000)}s` }];
+			}).then((u) => unlisteners.push(u));
+			listen<void>('audio:finished', () => {
+				eventLog = [...eventLog.slice(-99), { ts: performance.now(), type: 'finished' as const, msg: 'finished' }];
+			}).then((u) => unlisteners.push(u));
+			listen<string>('audio:error', (e) => {
+				eventLog = [...eventLog.slice(-99), { ts: performance.now(), type: 'error' as const, msg: e.payload }];
+			}).then((u) => unlisteners.push(u));
+		});
+		return () => unlisteners.forEach((u) => u());
+	});
 </script>
 
 <div class="max-w-2xl mx-auto space-y-8">
@@ -134,6 +176,95 @@
 		{/if}
 	</section>
 
+	<!-- Developer Dashboard -->
+	<section>
+		<h2 class="text-lg font-semibold mb-3 text-gray-400">
+			<button
+				onclick={() => (devExpanded = !devExpanded)}
+				class="flex items-center gap-2 hover:text-white transition-colors"
+			>
+				Developer
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="w-4 h-4 transition-transform {devExpanded ? 'rotate-90' : ''}"
+				>
+					<path d="M9 6l6 6-6 6" />
+				</svg>
+			</button>
+		</h2>
+		{#if devExpanded}
+			<div class="space-y-4">
+				<!-- IPC Latency Test -->
+				<div class="bg-white/5 rounded-lg p-4">
+					<h3 class="text-sm font-medium mb-2">IPC Latency</h3>
+					<button
+						onclick={testIpcLatency}
+						disabled={ipcTesting}
+						class="px-3 py-1.5 bg-white/10 rounded-lg text-xs font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
+					>
+						{ipcTesting ? 'Testing…' : 'Test Round-Trip'}
+					</button>
+					{#if ipcLatency !== null}
+						<p class="text-xs mt-2 {ipcLatency >= 0 ? 'text-gray-400' : 'text-red-400'}">
+							{ipcLatency >= 0 ? `${ipcLatency.toFixed(1)} ms` : 'Failed'}
+						</p>
+					{/if}
+				</div>
+
+				<!-- Event Log -->
+				<div class="bg-white/5 rounded-lg p-4">
+					<button
+						onclick={() => (logExpanded = !logExpanded)}
+						class="flex items-center gap-2 text-sm font-medium hover:text-white transition-colors"
+					>
+						Event Log ({eventLog.length})
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							class="w-3 h-3 transition-transform {logExpanded ? 'rotate-90' : ''}"
+						>
+							<path d="M9 6l6 6-6 6" />
+						</svg>
+					</button>
+					{#if logExpanded}
+						<div class="mt-2 max-h-48 overflow-y-auto font-mono text-[10px] space-y-0.5">
+							{#each [...eventLog].reverse() as entry (entry.ts)}
+								<div class="flex gap-2 {entry.type === 'error' ? 'text-red-400' : entry.type === 'finished' ? 'text-green-400' : 'text-gray-500'}">
+									<span class="shrink-0">{(entry.ts / 1000).toFixed(1)}s</span>
+									<span class="truncate">{entry.msg}</span>
+								</div>
+							{/each}
+							{#if eventLog.length === 0}
+								<p class="text-gray-600">No events yet. Play some audio.</p>
+							{/if}
+						</div>
+					{/if}
+				</div>
+
+				<!-- Keyboard Shortcuts Reference -->
+				<div class="bg-white/5 rounded-lg p-4">
+					<h3 class="text-sm font-medium mb-2">Keyboard Shortcuts</h3>
+					<table class="w-full text-xs">
+						<tbody class="divide-y divide-white/5">
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">Space</kbd></td><td class="py-1 text-right text-gray-400">Play / Pause</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">←</kbd></td><td class="py-1 text-right text-gray-400">Skip -30s</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">→</kbd></td><td class="py-1 text-right text-gray-400">Skip +15s</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">+</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">-</kbd></td><td class="py-1 text-right text-gray-400">Volume</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">M</kbd></td><td class="py-1 text-right text-gray-400">Mute</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">[</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">]</kbd></td><td class="py-1 text-right text-gray-400">Speed fine</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">1</kbd>-<kbd class="px-1 bg-white/10 rounded text-[10px]">6</kbd></td><td class="py-1 text-right text-gray-400">Speed presets</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">H</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">S</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">L</kbd></td><td class="py-1 text-right text-gray-400">Navigate</td></tr>
+							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">?</kbd></td><td class="py-1 text-right text-gray-400">Help</td></tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		{/if}
+	</section>
+
 	<!-- Danger Zone -->
 	<section>
 		<h2 class="text-lg font-semibold mb-3 text-red-400">Danger Zone</h2>
@@ -168,6 +299,4 @@
 			{/if}
 		</div>
 	</section>
-
-	<p class="text-xs text-gray-600">rymflux v0.1</p>
 </div>

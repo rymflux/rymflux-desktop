@@ -1,39 +1,34 @@
 <script lang="ts">
-	import { getBook, addToLibrary, resolveSource } from '$lib/ipc/catalog';
-	import { getProgress, getLibraryDetail, removeFromLibrary } from '$lib/ipc/library';
-	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore.svelte';
-	import DetailView from '$src/domains/audiobook/DetailView.svelte';
-	import NowPlayingView from '$src/domains/audiobook/NowPlayingView.svelte';
+	import { getProgress, getLibraryDetail, removeFromLibrary, storeItem } from '$lib/ipc/library';
+	import { setCurrentTrack, getPlayerState, getDomainRegistry } from '@rymflux/shell';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
+	import { buildProgressContext } from '$lib/ipc/progressContext';
 	import { onMount } from 'svelte';
-import type { CatalogDetail, ChapterInfo } from '$lib/types/ipc';
-import { resolve } from '$app/paths';
+	import type { ChapterInfo } from '@rymflux/shell';
+	import { resolve } from '$app/paths';
 
 	let { params } = $props();
 	let playerState = getPlayerState();
 	let engine = getAudioEngine();
+	let domain = getDomainRegistry().get('audiobook');
 
-	// Catalog uses numeric IDs; library stores prefixed (librivox_123)
-	let catalogId = $derived(
-		params.contentId.startsWith('librivox_')
-			? params.contentId.slice('librivox_'.length)
-			: params.contentId,
-	);
-
-	let book = $state<CatalogDetail | null>(null);
+	let book = $state<import('@rymflux/shell').CatalogDetail | null>(null);
 	let savedProgress = $state(0);
 	let loading = $state(true);
 	let adding = $state(false);
 	let removing = $state(false);
 	let isInLibrary = $state(false);
-let showDetails = $state(false);
-let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContentId === params.contentId);
+	let showDetails = $state(false);
+	let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContentId === params.contentId);
+
+	let detailView = domain?.views.detail;
+	let playerView = domain?.views.player;
 
 	onMount(async () => {
-		const bPromise = getBook(catalogId).catch((e) => {
-			console.error('getBook failed:', e);
+		const bPromise = domain?.getDetail?.(params.contentId).catch((e) => {
+			console.error('getDetail failed:', e);
 			return null;
-		});
+		}) ?? Promise.resolve(null);
 		const pPromise = getProgress(params.contentId).catch(() => null);
 		const lPromise = getLibraryDetail(params.contentId).then((item) => item !== null);
 		const [b, p, inLib] = await Promise.all([bPromise, pPromise, lPromise]);
@@ -43,27 +38,27 @@ let showNowPlaying = $derived(playerState.isLoaded && playerState.currentContent
 		loading = false;
 	});
 
-// Compute cumulative chapter offsets (ms from start of book to start of each chapter)
-function getChapterOffsets(sections: ChapterInfo[]): number[] {
-	const offsets: number[] = [];
-	let cum = 0;
-	for (const s of sections) {
-		offsets.push(cum);
-		cum += (s.playtime_secs ?? 0) * 1000;
+	// Compute cumulative chapter offsets (ms from start of book to start of each chapter)
+	function getChapterOffsets(sections: ChapterInfo[]): number[] {
+		const offsets: number[] = [];
+		let cum = 0;
+		for (const s of sections) {
+			offsets.push(cum);
+			cum += (s.playtime_secs ?? 0) * 1000;
+		}
+		return offsets;
 	}
-	return offsets;
-}
 
-// Find which chapter contains the given cumulative position
-function findChapterIndex(offsets: number[], positionMs: number): number {
-	for (let i = offsets.length - 1; i >= 0; i--) {
-		if (positionMs >= offsets[i]) return i;
+	// Find which chapter contains the given cumulative position
+	function findChapterIndex(offsets: number[], positionMs: number): number {
+		for (let i = offsets.length - 1; i >= 0; i--) {
+			if (positionMs >= offsets[i]) return i;
+		}
+		return 0;
 	}
-	return 0;
-}
 
 	async function handlePlay(chapterIndex?: number) {
-		if (!book) return;
+		if (!book || !domain) return;
 		const sections = book.sections;
 		const offsets = getChapterOffsets(sections);
 
@@ -72,7 +67,8 @@ function findChapterIndex(offsets: number[], positionMs: number): number {
 		const section = sections[idx];
 		if (!section) return;
 
-		const source = await resolveSource(section.listen_url, (section.playtime_secs ?? 0) * 1000);
+		const source = domain.resolveSource?.(section.listen_url, (section.playtime_secs ?? 0) * 1000);
+		if (!source) return;
 
 		// Seek to saved progress with 3s rewind, then adjust to intra-chapter position
 		const chapterOffset = offsets[idx];
@@ -83,19 +79,65 @@ function findChapterIndex(offsets: number[], positionMs: number): number {
 
 		setCurrentTrack(source, params.contentId, book.item.title, 'audiobook', book.item.cover_url, idx, book.sections);
 		engine?.play(source, params.contentId, startMs);
+		const savedSpeed = localStorage.getItem('speed_' + params.contentId);
+		if (savedSpeed) {
+			engine?.setSpeed(parseFloat(savedSpeed));
+		}
 	}
 
 	async function handleAddToLibrary() {
-		if (adding) return;
+		if (adding || !domain) return;
 		adding = true;
 		try {
-			await addToLibrary(catalogId);
-			isInLibrary = true;
+			const item = await domain.buildLibraryItem?.(params.contentId);
+			if (item) {
+				await storeItem(item, item.id, (item.metadata_json?.total_time_secs as number | undefined) ?? null);
+				isInLibrary = true;
+			}
 		} catch (e) {
 			console.error('add to library failed', e);
 		} finally {
 			adding = false;
 		}
+	}
+
+	function handlePlayPause() {
+		if (!engine) return;
+		const p = playerState;
+		if (!p.currentContentId) return;
+		if (p.isPlaying) {
+			engine.pause(p.currentDomainId, p.currentContentId, buildProgressContext(p.currentSections, p.currentChapterIndex));
+		} else if (p.currentSource) {
+			engine.play(p.currentSource, p.currentContentId, p.positionMs);
+			const savedSpeed = localStorage.getItem('speed_' + p.currentContentId);
+			if (savedSpeed) engine.setSpeed(parseFloat(savedSpeed));
+		}
+	}
+
+	function handleSeek(ms: number) {
+		if (!engine || !playerState.currentContentId) return;
+		engine.seek(playerState.currentDomainId, playerState.currentContentId, ms, buildProgressContext(playerState.currentSections, playerState.currentChapterIndex));
+	}
+
+	function handleSkipBack() {
+		const p = playerState;
+		handleSeek(Math.max(0, p.positionMs - 30_000));
+	}
+
+	function handleSkipForward() {
+		const p = playerState;
+		handleSeek(Math.min(p.durationMs, p.positionMs + 15_000));
+	}
+
+	function handleSpeedChange(rate: number) {
+		engine?.setSpeed(rate);
+		if (playerState.currentContentId) {
+			localStorage.setItem('speed_' + playerState.currentContentId, rate.toString());
+		}
+	}
+
+	function handleVolumeChange(v: number) {
+		engine?.setVolume(v);
 	}
 
 	async function handleRemoveFromLibrary() {
@@ -119,7 +161,19 @@ function findChapterIndex(offsets: number[], positionMs: number): number {
 		</div>
 	{:else if book}
 		{#if showNowPlaying && !showDetails}
-			<NowPlayingView />
+			{#each [playerView] as Component}
+				{#if Component}
+					<Component
+						onPlayPause={handlePlayPause}
+						onSeek={handleSeek}
+						onSkipBack={handleSkipBack}
+						onSkipForward={handleSkipForward}
+						onSpeedChange={handleSpeedChange}
+						onVolumeChange={handleVolumeChange}
+						onChapterClick={handlePlay}
+					></Component>
+				{/if}
+			{/each}
 			<div class="text-center mt-4">
 				<button
 					onclick={() => showDetails = true}
@@ -129,16 +183,20 @@ function findChapterIndex(offsets: number[], positionMs: number): number {
 				</button>
 			</div>
 		{:else}
-			<DetailView
-				{book}
-				{savedProgress}
-				onPlay={handlePlay}
-				onAddToLibrary={handleAddToLibrary}
-				onRemoveFromLibrary={handleRemoveFromLibrary}
-				{adding}
-				{removing}
-				{isInLibrary}
-			/>
+			{#each [detailView] as Component}
+				{#if Component}
+					<Component
+						{book}
+						{savedProgress}
+						onPlay={handlePlay}
+						onAddToLibrary={handleAddToLibrary}
+						onRemoveFromLibrary={handleRemoveFromLibrary}
+						{adding}
+						{removing}
+						{isInLibrary}
+					></Component>
+				{/if}
+			{/each}
 			{#if showNowPlaying}
 				<div class="text-center mt-4">
 					<button

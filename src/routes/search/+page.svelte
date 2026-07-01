@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { searchCatalog } from '$lib/ipc/catalog';
-	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-	import type { CatalogItem } from '$lib/types/ipc';
+	import { CoverImage, LoadingSpinner, getDomainRegistry } from '@rymflux/shell';
+	import type { DomainItem } from '@rymflux/shell';
 
 	let query = $state('');
 	let searchType = $state<'title' | 'author'>('title');
-	let results = $state<CatalogItem[]>([]);
+	let results = $state<DomainItem[]>([]);
 	let searching = $state(false);
 	let offset = $state(0);
 	let hasMore = $state(false);
@@ -22,13 +21,20 @@
 		}
 		searching = true;
 		try {
-			const items = await searchCatalog(q.trim(), searchType, limit, startOffset);
-			if (append) {
-				results = [...results, ...items];
-			} else {
-				results = items;
+			const registry = getDomainRegistry();
+			const allItems: DomainItem[] = [];
+			for (const [, domain] of registry) {
+				if (domain.search) {
+					const items = await domain.search(q.trim(), searchType, limit, startOffset);
+					allItems.push(...items);
+				}
 			}
-			hasMore = items.length >= limit;
+			if (append) {
+				results = [...results, ...allItems];
+			} else {
+				results = allItems;
+			}
+			hasMore = allItems.length >= limit;
 			offset = startOffset;
 		} catch (e) {
 			console.error('search failed', e);
@@ -57,7 +63,7 @@
 </script>
 
 <div class="max-w-4xl mx-auto">
-	<h1 class="text-2xl font-bold mb-4">Search LibriVox</h1>
+	<h1 class="text-2xl font-bold mb-4">Search</h1>
 
 	<div class="flex gap-2 mb-3">
 		<button
@@ -90,16 +96,32 @@
 
 	{#if results.length > 0}
 		<div class="mt-6 space-y-2">
-			{#each results as book (book.id)}
+			{#each results as book (book.content_id)}
 				<a
-					href={resolve('/player/[contentId]', { contentId: book.id })}
-					class="block p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+					href={resolve('/player/[contentId]', { contentId: book.content_id })}
+					class="flex gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
 				>
-					<h3 class="font-semibold">{book.title}</h3>
-					<p class="text-sm text-gray-400">{book.author}</p>
-					{#if book.description}
-						<p class="text-xs text-gray-500 mt-1 line-clamp-2">{book.description}</p>
-					{/if}
+					<div class="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-white/10">
+						<CoverImage url={book.cover_url} title={book.title} class="w-full h-full object-cover" />
+					</div>
+					<div class="flex-1 min-w-0">
+						<h3 class="font-semibold text-sm truncate">{book.title}</h3>
+						<p class="text-xs text-gray-400 truncate">{book.author}</p>
+						<div class="flex flex-wrap gap-1.5 mt-1">
+							{#if book.language}
+								<span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-gray-400 uppercase tracking-wider">{book.language}</span>
+							{/if}
+							{#if book.num_sections != null}
+								<span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-gray-400">{book.num_sections} {book.num_sections === 1 ? 'section' : 'sections'}</span>
+							{/if}
+							{#if book.duration_ms != null}
+								<span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-gray-400">{Math.floor(book.duration_ms / 60000)} min</span>
+							{/if}
+						</div>
+						{#if book.description}
+							<p class="text-[11px] text-gray-500 mt-1 line-clamp-1">{book.description}</p>
+						{/if}
+					</div>
 				</a>
 			{/each}
 		</div>
