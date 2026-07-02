@@ -5,6 +5,7 @@ use rymflux_core::types::{
     AudioSource, ContentIdentity, ContentItem, DomainId, DomainRecord, PlaybackState,
     ProgressRecord, ProgressWriteContext,
 };
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 // ── Playback ─────────────────────────────────────────────────────────────────
@@ -176,6 +177,14 @@ pub fn library_count_content(
     let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
     let domain = DomainId::from(domain_id);
     commands::library::count_by_domain(&storage, &domain).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn library_count_all(
+    storage_state: tauri::State<'_, Mutex<StorageEngine>>,
+) -> Result<HashMap<String, i64>, String> {
+    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+    commands::library::count_all(&storage).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -43,6 +43,10 @@ export async function countContent(domainId: string): Promise<number> {
 	return invoke('library_count_content', { domainId }) as Promise<number>;
 }
 
+export async function countAllContent(): Promise<Record<string, number>> {
+	return invoke('library_count_all') as Promise<Record<string, number>>;
+}
+
 export async function listLibrary(domainId: string): Promise<DomainItem[]> {
 	const raw = await invoke('library_list', { domainId });
 	return toDomainItems(raw as unknown[]);

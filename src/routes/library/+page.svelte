@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { listDomains, countContent } from '$lib/ipc/library';
+	import { listDomains, countAllContent } from '$lib/ipc/library';
 	import type { DomainRecord } from '@rymflux/shell';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
@@ -10,14 +10,12 @@
 	onMount(async () => {
 		try {
 			const records: DomainRecord[] = await listDomains();
-			const withCounts = await Promise.all(
-				records.map(async (d) => ({
-					id: d.id,
-					label: d.display_name,
-					count: await countContent(d.id),
-				})),
-			);
-			domains = withCounts;
+			const counts = await countAllContent();
+			domains = records.map((d) => ({
+				id: d.id,
+				label: d.display_name,
+				count: counts[d.id] ?? 0,
+			}));
 		} catch {
 			domains = [];
 		} finally {
