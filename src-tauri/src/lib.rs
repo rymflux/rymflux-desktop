@@ -74,6 +74,7 @@ pub fn run() {
             commands::library_store_item,
             commands::library_remove_from,
             commands::library_clear,
+            commands::set_diag_mode,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { CoverImage, LoadingSpinner, getDomainRegistry } from '@rymflux/shell';
+	import { diag, CoverImage, LoadingSpinner, getDomainRegistry } from '@rymflux/shell';
 	import type { DomainItem } from '@rymflux/shell';
 
 	let query = $state('');
@@ -37,7 +37,7 @@
 			hasMore = allItems.length >= limit;
 			offset = startOffset;
 		} catch (e) {
-			console.error('search failed', e);
+			diag.error('search failed', e);
 		} finally {
 			searching = false;
 		}

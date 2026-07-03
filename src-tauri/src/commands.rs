@@ -258,6 +258,13 @@ pub fn progress_sync(
     commands::progress::sync(&storage, &domain).map_err(|e| e.to_string())
 }
 
+// ── Diagnostics ─────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn set_diag_mode(enabled: bool) {
+    rymflux_core::set_diag_mode(enabled);
+}
+
 use std::sync::LazyLock;
 use std::time::{Duration, SystemTime};
 

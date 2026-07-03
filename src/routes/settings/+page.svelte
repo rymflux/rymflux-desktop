@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { getUiState, getPlayerState, setTheme, Icon } from '@rymflux/shell';
+	import { diag, getUiState, getPlayerState, setTheme, Icon, toggleDiagMode as toggleFrontendDiagMode } from '@rymflux/shell';
 	import { listDomains, countContent, syncProgress, clearLibrary } from '$lib/ipc/library';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
+	import { setBackendDiagMode } from '$lib/ipc/diag';
 	import { onMount } from 'svelte';
 
 	let ui = getUiState();
@@ -25,7 +26,7 @@
 			contentCount = counts.reduce((a, b) => a + b, 0);
 			progressCount = progresses.flat().length;
 		} catch (e) {
-			console.error('failed to load storage stats', e);
+			diag.error('failed to load storage stats', e);
 		} finally {
 			loading = false;
 		}
@@ -41,7 +42,7 @@
 			progressCount = 0;
 			clearConfirm = false;
 		} catch (e) {
-			console.error('failed to clear library', e);
+			diag.error('failed to clear library', e);
 		} finally {
 			clearing = false;
 		}
@@ -53,6 +54,13 @@
 	let ipcLatency = $state<number | null>(null);
 	let ipcTesting = $state(false);
 	let devExpanded = $state(false);
+	let diagEnabled = $state(false);
+
+	async function handleToggleDiag() {
+		diagEnabled = !diagEnabled;
+		toggleFrontendDiagMode();
+		await setBackendDiagMode(diagEnabled);
+	}
 
 	async function testIpcLatency() {
 		if (!engine || ipcTesting) return;
@@ -237,6 +245,30 @@
 							{ipcLatency >= 0 ? `${ipcLatency.toFixed(1)} ms` : 'Failed'}
 						</p>
 					{/if}
+				</div>
+
+				<!-- Diagnostic Mode -->
+				<div class="card p-4">
+					<h3 class="text-sm font-medium mb-2">Diagnostic Mode</h3>
+					<p class="label-secondary mb-3">
+						Enables verbose console.log and tracing::debug output for debugging.
+					</p>
+					<div class="flex items-center gap-3">
+						<button
+							onclick={handleToggleDiag}
+							class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+							style="background-color: {diagEnabled ? '#22c55e' : 'var(--bg-hover)'};"
+							aria-label="Toggle diagnostic mode"
+						>
+							<span
+								class="inline-block h-4 w-4 rounded-full bg-white transition-transform"
+								style="transform: translateX({diagEnabled ? '22px' : '3px'});"
+							></span>
+						</button>
+						<span class="text-xs font-mono" style="color: var(--text-secondary);">
+							{diagEnabled ? 'ON' : 'OFF'}
+						</span>
+					</div>
 				</div>
 
 				<!-- Event Log -->

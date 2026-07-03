@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ShellLayout, ErrorBoundary, updatePlaybackState, getPlayerState, createDomainRegistry, addToast } from '@rymflux/shell';
+	import { diag, ShellLayout, ErrorBoundary, updatePlaybackState, getPlayerState, createDomainRegistry, addToast } from '@rymflux/shell';
 	import { audiobookDomain } from '@rymflux/domain-audiobook';
 	import { TauriAudioEngine } from '$lib/ipc/audioEngine';
 	import { setAudioEngine } from '$lib/ipc/engineContext';
@@ -50,7 +50,7 @@
 						ctx,
 						playerState.speed,
 					).catch((err) => {
-						console.error('progress heartbeat failed:', err);
+						diag.error('progress heartbeat failed:', err);
 						addToast('Failed to save playback progress. Your position may not be saved.', 'error');
 					});
 				}
@@ -169,13 +169,13 @@
 							playerState.currentContentId,
 							playerState.positionMs,
 						).catch((err) => {
-							console.error('progress save on finish failed:', err);
+							diag.error('progress save on finish failed:', err);
 							addToast('Failed to save progress on completion.', 'error');
 						});
 					}
 				},
-				(err) => console.error('audio:error', err),
-			).catch((err) => console.error('audio:init failed', err));
+				(err) => diag.error('audio:error', err),
+			).catch((err) => diag.error('audio:init failed', err));
 		}
 
 		return () => {

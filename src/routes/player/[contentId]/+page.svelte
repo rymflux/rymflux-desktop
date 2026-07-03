@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getProgress, getLibraryDetail, removeFromLibrary, storeItem } from '$lib/ipc/library';
-	import { setCurrentTrack, getPlayerState, getDomainRegistry } from '@rymflux/shell';
+	import { diag, setCurrentTrack, getPlayerState, getDomainRegistry } from '@rymflux/shell';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { buildProgressContext } from '$lib/ipc/progressContext';
 	import { onMount } from 'svelte';
@@ -26,7 +26,7 @@
 
 	onMount(async () => {
 		const bPromise = domain?.getDetail?.(params.contentId).catch((e) => {
-			console.error('getDetail failed:', e);
+			diag.error('getDetail failed:', e);
 			return null;
 		}) ?? Promise.resolve(null);
 		const pPromise = getProgress(params.contentId).catch(() => null);
@@ -95,7 +95,7 @@
 				isInLibrary = true;
 			}
 		} catch (e) {
-			console.error('add to library failed', e);
+			diag.error('add to library failed', e);
 		} finally {
 			adding = false;
 		}
@@ -147,7 +147,7 @@
 			await removeFromLibrary(params.contentId);
 			isInLibrary = false;
 		} catch (e) {
-			console.error('remove from library failed', e);
+			diag.error('remove from library failed', e);
 		} finally {
 			removing = false;
 		}
