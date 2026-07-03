@@ -1,2 +1,42 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
+
+/* ── Theme tokens ── */
+:root,
+[data-theme="dark"] {
+	--bg-primary: #111827; /* gray-900 */
+	--bg-secondary: #1f2937; /* gray-800 */
+	--bg-muted: rgb(255 255 255 / 0.05);
+	--bg-hover: rgb(255 255 255 / 0.1);
+	--bg-elevated: rgb(255 255 255 / 0.2);
+	--bg-danger-subtle: rgb(239 68 68 / 0.1);
+	--bg-danger: #dc2626;
+
+	--text-primary: #ffffff;
+	--text-secondary: #9ca3af; /* gray-400 */
+	--text-muted: #6b7280; /* gray-500 */
+	--text-danger: #f87171; /* red-400 */
+
+	--border: rgb(255 255 255 / 0.1);
+	--border-subtle: rgb(255 255 255 / 0.05);
+	--border-danger: rgb(239 68 68 / 0.3);
+}
+
+[data-theme="light"] {
+	--bg-primary: #ffffff;
+	--bg-secondary: #f3f4f6; /* gray-100 */
+	--bg-muted: rgb(0 0 0 / 0.03);
+	--bg-hover: rgb(0 0 0 / 0.05);
+	--bg-elevated: rgb(0 0 0 / 0.08);
+	--bg-danger-subtle: rgb(239 68 68 / 0.1);
+	--bg-danger: #dc2626;
+
+	--text-primary: #111827; /* gray-900 */
+	--text-secondary: #4b5563; /* gray-600 */
+	--text-muted: #9ca3af; /* gray-400 */
+	--text-danger: #dc2626;
+
+	--border: rgb(0 0 0 / 0.1);
+	--border-subtle: rgb(0 0 0 / 0.05);
+	--border-danger: rgb(239 68 68 / 0.3);
+}
