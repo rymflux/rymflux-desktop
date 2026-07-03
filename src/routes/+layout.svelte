@@ -273,32 +273,34 @@
 		role="presentation"
 	>
 		<div
-			class="bg-gray-900 border border-white/10 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+			class="rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl"
 			role="dialog"
 			aria-label="Keyboard shortcuts"
 			tabindex="-1"
+			style="background-color: var(--bg-secondary); border: 1px solid var(--border);"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.key === 'Escape' && (showShortcuts = false)}
 		>
-			<h2 class="text-lg font-bold mb-4">Keyboard Shortcuts</h2>
+			<h2 class="text-lg font-bold mb-4" style="color: var(--text-primary);">Keyboard Shortcuts</h2>
 			<table class="w-full text-sm">
-				<tbody class="divide-y divide-white/5">
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">Space</kbd></td><td class="py-1.5 text-right">Play / Pause</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">←</kbd></td><td class="py-1.5 text-right">Skip back 30s</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">→</kbd></td><td class="py-1.5 text-right">Skip forward 15s</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">=</kbd> <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">-</kbd></td><td class="py-1.5 text-right">Volume up / down</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">M</kbd></td><td class="py-1.5 text-right">Mute / Unmute</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">[</kbd> <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">]</kbd></td><td class="py-1.5 text-right">Speed - / +</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">1</kbd>-<kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">6</kbd></td><td class="py-1.5 text-right">Speed presets</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">H</kbd></td><td class="py-1.5 text-right">Home</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">S</kbd></td><td class="py-1.5 text-right">Search</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">L</kbd></td><td class="py-1.5 text-right">Library</td></tr>
-					<tr><td class="py-1.5 text-gray-400"><kbd class="px-1.5 py-0.5 bg-white/10 rounded text-xs">?</kbd></td><td class="py-1.5 text-right">Toggle this help</td></tr>
+				<tbody class="divide-y" style="border-color: var(--border-subtle);">
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">Space</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Play / Pause</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">←</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Skip back 30s</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">→</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Skip forward 15s</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">=</kbd> <kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">-</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Volume up / down</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">M</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Mute / Unmute</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">[</kbd> <kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">]</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Speed - / +</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">1</kbd>-<kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">6</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Speed presets</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">H</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Home</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">S</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Search</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">L</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Library</td></tr>
+					<tr><td class="py-1.5" style="color: var(--text-secondary);"><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--bg-hover);">?</kbd></td><td class="py-1.5 text-right" style="color: var(--text-primary);">Toggle this help</td></tr>
 				</tbody>
 			</table>
 			<button
 				onclick={() => (showShortcuts = false)}
-				class="mt-4 w-full px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition-colors"
+				class="mt-4 w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+				style="background-color: var(--bg-hover); color: var(--text-primary);"
 			>
 				Close
 			</button>

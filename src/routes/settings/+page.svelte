@@ -90,7 +90,7 @@
 	});
 </script>
 
-<div class="max-w-2xl mx-auto space-y-8">
+<div class="max-w-2xl mx-auto space-y-8" style="color: var(--text-primary);">
 	<h1 class="text-2xl font-bold">Settings</h1>
 
 	<!-- Display -->
@@ -102,10 +102,7 @@
 				<div class="flex rounded-lg overflow-hidden border" style="border-color: var(--border);">
 					<button
 						onclick={() => setTheme('dark')}
-						class="px-4 py-1.5 text-sm font-medium transition-colors
-							{ui.theme === 'dark'
-								? 'text-white'
-								: ''}"
+						class="px-4 py-1.5 text-sm font-medium transition-colors"
 						style="
 							background-color: {ui.theme === 'dark' ? 'var(--bg-hover)' : 'transparent'};
 							color: {ui.theme === 'dark' ? 'var(--text-primary)' : 'var(--text-secondary)'};
@@ -136,7 +133,7 @@
 				<select
 					value={ui.viewMode}
 					onchange={(e) => (ui.viewMode = (e.target as HTMLSelectElement).value as 'grid' | 'list')}
-					class="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm"
+					class="px-3 py-1.5 text-sm rounded-lg border"
 					style="background-color: var(--bg-muted); border-color: var(--border); color: var(--text-primary);"
 				>
 					<option value="grid">Grid</option>
@@ -151,38 +148,41 @@
 		<h2 class="text-lg font-semibold mb-3">Audio Engine</h2>
 		{#if playerState.isLoaded}
 			<table class="w-full text-sm">
-				<tbody class="divide-y divide-white/5">
+				<tbody class="divide-y" style="border-color: var(--border-subtle);">
 					<tr>
-						<td class="py-1.5 text-gray-500">Status</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Status</td>
 						<td class="py-1.5 text-right">
-							<span class="inline-block w-2 h-2 rounded-full {playerState.isPlaying ? 'bg-green-500' : 'bg-gray-500'} mr-1.5"></span>
+							<span
+								class="inline-block w-2 h-2 rounded-full mr-1.5"
+								style="background-color: {playerState.isPlaying ? '#22c55e' : 'var(--text-muted)'};"
+							></span>
 							{playerState.isPlaying ? 'Playing' : 'Paused'}
 						</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Title</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Title</td>
 						<td class="py-1.5 text-right truncate max-w-56">{playerState.currentTitle || '—'}</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Content ID</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Content ID</td>
 						<td class="py-1.5 text-right font-mono text-xs truncate max-w-56">{playerState.currentContentId ?? '—'}</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Position</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Position</td>
 						<td class="py-1.5 text-right font-mono">{(playerState.positionMs / 1000).toFixed(1)}s / {(playerState.durationMs / 1000).toFixed(1)}s</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Speed</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Speed</td>
 						<td class="py-1.5 text-right">{playerState.speed.toFixed(2)}x</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Volume</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Volume</td>
 						<td class="py-1.5 text-right">{Math.round(playerState.volume * 100)}%</td>
 					</tr>
 				</tbody>
 			</table>
 		{:else}
-			<p class="text-sm text-gray-500">No audio loaded.</p>
+			<p class="label-secondary">No audio loaded.</p>
 		{/if}
 	</section>
 
@@ -190,20 +190,20 @@
 	<section>
 		<h2 class="text-lg font-semibold mb-3">Storage</h2>
 		{#if loading}
-			<p class="text-sm text-gray-500">Loading stats…</p>
+			<p class="label-secondary">Loading stats…</p>
 		{:else}
 			<table class="w-full text-sm">
-				<tbody class="divide-y divide-white/5">
+				<tbody class="divide-y" style="border-color: var(--border-subtle);">
 					<tr>
-						<td class="py-1.5 text-gray-500">Domains</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Domains</td>
 						<td class="py-1.5 text-right">{domains.length}</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Content items</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Content items</td>
 						<td class="py-1.5 text-right">{contentCount}</td>
 					</tr>
 					<tr>
-						<td class="py-1.5 text-gray-500">Progress entries</td>
+						<td class="py-1.5" style="color: var(--text-secondary);">Progress entries</td>
 						<td class="py-1.5 text-right">{progressCount}</td>
 					</tr>
 				</tbody>
@@ -213,10 +213,11 @@
 
 	<!-- Developer Dashboard -->
 	<section>
-		<h2 class="text-lg font-semibold mb-3 text-gray-400">
+		<h2 class="text-lg font-semibold mb-3" style="color: var(--text-secondary);">
 			<button
 				onclick={() => (devExpanded = !devExpanded)}
-				class="flex items-center gap-2 hover:text-white transition-colors"
+				class="flex items-center gap-2 transition-colors hover:text-white"
+				style="color: var(--text-secondary);"
 			>
 				Developer
 				<svg
@@ -232,27 +233,29 @@
 		{#if devExpanded}
 			<div class="space-y-4">
 				<!-- IPC Latency Test -->
-				<div class="bg-white/5 rounded-lg p-4">
+				<div class="card p-4">
 					<h3 class="text-sm font-medium mb-2">IPC Latency</h3>
 					<button
 						onclick={testIpcLatency}
 						disabled={ipcTesting}
-						class="px-3 py-1.5 bg-white/10 rounded-lg text-xs font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
+						class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+						style="background-color: var(--bg-hover); color: var(--text-primary);"
 					>
 						{ipcTesting ? 'Testing…' : 'Test Round-Trip'}
 					</button>
 					{#if ipcLatency !== null}
-						<p class="text-xs mt-2 {ipcLatency >= 0 ? 'text-gray-400' : 'text-red-400'}">
+						<p class="text-xs mt-2" style="color: {ipcLatency >= 0 ? 'var(--text-secondary)' : 'var(--text-danger)'}">
 							{ipcLatency >= 0 ? `${ipcLatency.toFixed(1)} ms` : 'Failed'}
 						</p>
 					{/if}
 				</div>
 
 				<!-- Event Log -->
-				<div class="bg-white/5 rounded-lg p-4">
+				<div class="card p-4">
 					<button
 						onclick={() => (logExpanded = !logExpanded)}
-						class="flex items-center gap-2 text-sm font-medium hover:text-white transition-colors"
+						class="flex items-center gap-2 text-sm font-medium transition-colors"
+						style="color: var(--text-primary);"
 					>
 						Event Log ({eventLog.length})
 						<svg
@@ -265,34 +268,37 @@
 						</svg>
 					</button>
 					{#if logExpanded}
-						<div class="mt-2 max-h-48 overflow-y-auto font-mono text-[10px] space-y-0.5">
+						<div class="mt-2 max-h-48 overflow-y-auto font-mono text-xs space-y-0.5">
 							{#each [...eventLog].reverse() as entry (entry.ts)}
-								<div class="flex gap-2 {entry.type === 'error' ? 'text-red-400' : entry.type === 'finished' ? 'text-green-400' : 'text-gray-500'}">
+								<div
+									class="flex gap-2"
+									style="color: {entry.type === 'error' ? 'var(--text-danger)' : entry.type === 'finished' ? '#22c55e' : 'var(--text-muted)'};"
+								>
 									<span class="shrink-0">{(entry.ts / 1000).toFixed(1)}s</span>
 									<span class="truncate">{entry.msg}</span>
 								</div>
 							{/each}
 							{#if eventLog.length === 0}
-								<p class="text-gray-600">No events yet. Play some audio.</p>
+								<p style="color: var(--text-muted);">No events yet. Play some audio.</p>
 							{/if}
 						</div>
 					{/if}
 				</div>
 
 				<!-- Keyboard Shortcuts Reference -->
-				<div class="bg-white/5 rounded-lg p-4">
+				<div class="card p-4">
 					<h3 class="text-sm font-medium mb-2">Keyboard Shortcuts</h3>
 					<table class="w-full text-xs">
-						<tbody class="divide-y divide-white/5">
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">Space</kbd></td><td class="py-1 text-right text-gray-400">Play / Pause</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">←</kbd></td><td class="py-1 text-right text-gray-400">Skip -30s</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">→</kbd></td><td class="py-1 text-right text-gray-400">Skip +15s</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">+</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">-</kbd></td><td class="py-1 text-right text-gray-400">Volume</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">M</kbd></td><td class="py-1 text-right text-gray-400">Mute</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">[</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">]</kbd></td><td class="py-1 text-right text-gray-400">Speed fine</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">1</kbd>-<kbd class="px-1 bg-white/10 rounded text-[10px]">6</kbd></td><td class="py-1 text-right text-gray-400">Speed presets</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">H</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">S</kbd> <kbd class="px-1 bg-white/10 rounded text-[10px]">L</kbd></td><td class="py-1 text-right text-gray-400">Navigate</td></tr>
-							<tr><td class="py-1 text-gray-500"><kbd class="px-1 bg-white/10 rounded text-[10px]">?</kbd></td><td class="py-1 text-right text-gray-400">Help</td></tr>
+						<tbody class="divide-y" style="border-color: var(--border-subtle);">
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">Space</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Play / Pause</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">←</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Skip -30s</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">→</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Skip +15s</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">+</kbd> <kbd class="px-1 rounded" style="background-color: var(--bg-hover);">-</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Volume</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">M</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Mute</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">[</kbd> <kbd class="px-1 rounded" style="background-color: var(--bg-hover);">]</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Speed fine</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">1</kbd>-<kbd class="px-1 rounded" style="background-color: var(--bg-hover);">6</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Speed presets</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">H</kbd> <kbd class="px-1 rounded" style="background-color: var(--bg-hover);">S</kbd> <kbd class="px-1 rounded" style="background-color: var(--bg-hover);">L</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Navigate</td></tr>
+							<tr><td class="py-1" style="color: var(--text-secondary);"><kbd class="px-1 rounded" style="background-color: var(--bg-hover);">?</kbd></td><td class="py-1 text-right" style="color: var(--text-secondary);">Help</td></tr>
 						</tbody>
 					</table>
 				</div>
@@ -302,24 +308,26 @@
 
 	<!-- Danger Zone -->
 	<section>
-		<h2 class="text-lg font-semibold mb-3 text-red-400">Danger Zone</h2>
-		<div class="bg-red-600/10 border border-red-600/20 rounded-lg p-4 space-y-3">
-			<p class="text-sm text-gray-400">
+		<h2 class="text-lg font-semibold mb-3" style="color: var(--text-danger);">Danger Zone</h2>
+		<div class="card p-4 space-y-3" style="background-color: var(--bg-danger-subtle); border-color: var(--border-danger);">
+			<p class="label-secondary">
 				Clear all library content and progress. This cannot be undone.
 			</p>
 			{#if clearConfirm}
 				<div class="flex items-center gap-3">
-					<p class="text-sm text-red-400">Are you sure?</p>
+					<p class="text-sm" style="color: var(--text-danger);">Are you sure?</p>
 					<button
 						onclick={handleClear}
 						disabled={clearing}
-						class="px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+						class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+						style="background-color: var(--bg-danger); color: white;"
 					>
 						{clearing ? 'Clearing…' : 'Yes, clear everything'}
 					</button>
 					<button
 						onclick={() => (clearConfirm = false)}
-						class="px-4 py-1.5 bg-white/10 rounded-lg text-sm hover:bg-white/20 transition-colors"
+						class="px-4 py-1.5 rounded-lg text-sm transition-colors"
+						style="background-color: var(--bg-hover); color: var(--text-primary);"
 					>
 						Cancel
 					</button>
@@ -327,7 +335,8 @@
 			{:else}
 				<button
 					onclick={() => (clearConfirm = true)}
-					class="px-4 py-1.5 bg-red-600/20 text-red-400 border border-red-600/30 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors"
+					class="px-4 py-1.5 text-sm font-medium rounded-lg transition-colors"
+					style="background-color: var(--bg-danger-subtle); color: var(--text-danger); border: 1px solid var(--border-danger);"
 				>
 					Clear Library
 				</button>
