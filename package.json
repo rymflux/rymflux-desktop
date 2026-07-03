@@ -12,22 +12,23 @@
     "tauri": "tauri"
   },
   "license": "MIT",
-	"dependencies": {
-		"@rymflux/shell": "file:../rymflux-shell",
-		"@rymflux/domain-audiobook": "file:../rymflux-audiobook",
-		"@tauri-apps/api": "^2",
-		"@tauri-apps/plugin-opener": "^2"
-	},
+  "dependencies": {
+    "@lucide/svelte": "^1.23.0",
+    "@rymflux/domain-audiobook": "file:../rymflux-audiobook",
+    "@rymflux/shell": "file:../rymflux-shell",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2"
+  },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.65.1",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tailwindcss/vite": "^4.3.0",
-    "tailwindcss": "^4.3.0",
+    "@tauri-apps/cli": "^2",
     "svelte": "^5.56.3",
     "svelte-check": "^4.6.0",
+    "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",
-    "vite": "^8.0.16",
-    "@tauri-apps/cli": "^2"
+    "vite": "^8.0.16"
   }
 }
