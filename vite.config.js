@@ -10,6 +10,9 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(() => ({
   plugins: [tailwindcss(), sveltekit()],
+  optimizeDeps: {
+    exclude: ['@rymflux/shell'],
+  },
   resolve: {
     alias: {
       '@rymflux/domain-audiobook': path.resolve('../rymflux-audiobook/src/lib'),
