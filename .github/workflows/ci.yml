@@ -5,7 +5,14 @@
 #   - Svelte frontend depending on rymflux-shell and rymflux-audiobook
 #
 # Sibling repos are checked out as needed per job so that file:/path:
-# dependencies resolve correctly.
+# dependencies resolve correctly. The main repo is checked out with
+# path: rymflux-desktop to create the expected directory structure,
+# and sibling repos with path: also land in GITHUB_WORKSPACE as siblings.
+# This way file:../rymflux-shell resolves correctly from the desktop's
+# package.json.
+#
+# For the frontend check job, the sibling repo types need to be built
+# (pnpm prepack) before svelte-check can resolve type declarations.
 #
 # Runs on push/PR to main. Five parallel jobs:
 #   check       — svelte-check (frontend type safety)
@@ -43,12 +50,14 @@ jobs:
         with:
           repository: rymflux/rymflux-shell
           path: rymflux-shell
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Checkout rymflux-audiobook (sibling for @rymflux/domain-audiobook file: dep)"
         uses: actions/checkout@v4
         with:
           repository: rymflux/rymflux-audiobook
           path: rymflux-audiobook
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -61,6 +70,24 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
           cache-dependency-path: 'rymflux-desktop/pnpm-lock.yaml'
+
+      # Build shell types first so @rymflux/shell declarations are available
+      - name: Install shell dependencies
+        working-directory: rymflux-shell
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shell types
+        working-directory: rymflux-shell
+        run: pnpm prepack
+
+      # Build audiobook types so @rymflux/domain-audiobook declarations are available
+      - name: Install audiobook dependencies
+        working-directory: rymflux-audiobook
+        run: pnpm install --frozen-lockfile
+
+      - name: Build audiobook types
+        working-directory: rymflux-audiobook
+        run: pnpm prepack
 
       - name: Install frontend dependencies
         working-directory: rymflux-desktop
@@ -88,6 +115,7 @@ jobs:
         with:
           repository: rymflux/rymflux-core
           path: rymflux-core
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install system deps (Tauri + ALSA)
         run: |
@@ -125,6 +153,7 @@ jobs:
         with:
           repository: rymflux/rymflux-core
           path: rymflux-core
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install system deps (Tauri + ALSA)
         run: |
@@ -163,6 +192,7 @@ jobs:
         with:
           repository: rymflux/rymflux-core
           path: rymflux-core
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install system deps (Tauri + ALSA)
         run: |
@@ -200,6 +230,7 @@ jobs:
         with:
           repository: rymflux/rymflux-core
           path: rymflux-core
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install system deps (Tauri + ALSA)
         run: |
