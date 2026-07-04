@@ -64,11 +64,15 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: rymflux-desktop
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Type check (svelte-check)
         working-directory: rymflux-desktop
         run: pnpm check
+
+      - name: Build frontend (vite build)
+        working-directory: rymflux-desktop
+        run: pnpm build
 
   cargo-check:
     name: cargo check
