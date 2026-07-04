@@ -1,0 +1,216 @@
+# CI for rymflux-desktop
+#
+# rymflux-desktop is a Tauri v2 application with:
+#   - Rust backend (src-tauri/) depending on rymflux-core
+#   - Svelte frontend depending on rymflux-shell and rymflux-audiobook
+#
+# Sibling repos are checked out as needed per job so that file:/path:
+# dependencies resolve correctly.
+#
+# Runs on push/PR to main. Five parallel jobs:
+#   check       — svelte-check (frontend type safety)
+#   cargo-check — Rust compile gate
+#   clippy      — Rust lint gate
+#   test        — Rust unit + integration tests
+#   fmt         — Rust style enforcement
+#
+# Total wall time target: under 8 minutes.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  check:
+    name: svelte-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rymflux-desktop
+
+      - name: Checkout rymflux-shell (sibling for @rymflux/shell file: dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-shell
+          path: rymflux-shell
+
+      - name: Checkout rymflux-audiobook (sibling for @rymflux/domain-audiobook file: dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-audiobook
+          path: rymflux-audiobook
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'rymflux-desktop/pnpm-lock.yaml'
+
+      - name: Install frontend dependencies
+        working-directory: rymflux-desktop
+        run: pnpm install
+
+      - name: Type check (svelte-check)
+        working-directory: rymflux-desktop
+        run: pnpm check
+
+  cargo-check:
+    name: cargo check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rymflux-desktop
+
+      - name: Checkout rymflux-core (sibling for Cargo path dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-core
+          path: rymflux-core
+
+      - name: Install system deps (Tauri + ALSA)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev
+
+      - name: Install Rust (stable)
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rymflux-desktop/src-tauri
+
+      - name: Compile check
+        working-directory: rymflux-desktop/src-tauri
+        run: cargo check
+
+  clippy:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rymflux-desktop
+
+      - name: Checkout rymflux-core (sibling for Cargo path dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-core
+          path: rymflux-core
+
+      - name: Install system deps (Tauri + ALSA)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev
+
+      - name: Install Rust (stable) with clippy
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rymflux-desktop/src-tauri
+
+      - name: Lint check
+        working-directory: rymflux-desktop/src-tauri
+        run: cargo clippy -- -D warnings
+
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rymflux-desktop
+
+      - name: Checkout rymflux-core (sibling for Cargo path dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-core
+          path: rymflux-core
+
+      - name: Install system deps (Tauri + ALSA)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev
+
+      - name: Install Rust (stable)
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rymflux-desktop/src-tauri
+
+      - name: Run tests
+        working-directory: rymflux-desktop/src-tauri
+        run: cargo test
+
+  fmt:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rymflux-desktop
+
+      - name: Checkout rymflux-core (sibling for Cargo path dep)
+        uses: actions/checkout@v4
+        with:
+          repository: rymflux/rymflux-core
+          path: rymflux-core
+
+      - name: Install system deps (Tauri + ALSA)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev
+
+      - name: Install Rust (stable) with rustfmt
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+
+      - name: Format check
+        working-directory: rymflux-desktop/src-tauri
+        run: cargo fmt --check
