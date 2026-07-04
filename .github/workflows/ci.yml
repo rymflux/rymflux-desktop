@@ -38,13 +38,13 @@ jobs:
         with:
           path: rymflux-desktop
 
-      - name: Checkout rymflux-shell (sibling for @rymflux/shell file: dep)
+      - name: "Checkout rymflux-shell (sibling for @rymflux/shell file: dep)"
         uses: actions/checkout@v4
         with:
           repository: rymflux/rymflux-shell
           path: rymflux-shell
 
-      - name: Checkout rymflux-audiobook (sibling for @rymflux/domain-audiobook file: dep)
+      - name: "Checkout rymflux-audiobook (sibling for @rymflux/domain-audiobook file: dep)"
         uses: actions/checkout@v4
         with:
           repository: rymflux/rymflux-audiobook
