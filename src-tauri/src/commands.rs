@@ -288,7 +288,9 @@ pub async fn http_get(url: String) -> Result<String, String> {
     if !resp.status().is_success() {
         return Err(format!("HTTP {}: {}", resp.status(), url));
     }
-    resp.text().await.map_err(|e| format!("Failed to read response: {e}"))
+    resp.text()
+        .await
+        .map_err(|e| format!("Failed to read response: {e}"))
 }
 
 // ── Generic library store command (domain-agnostic) ────────────────────────
