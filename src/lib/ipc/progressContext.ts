@@ -1,4 +1,4 @@
-import type { ChapterInfo } from '@rymflux/shell';
+import type { ChapterInfo } from '$lib/types/ipc';
 
 export interface ProgressWriteContext {
 	chapter_index: number;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { listDomains, countAllContent } from '$lib/ipc/library';
-	import type { DomainRecord } from '@rymflux/shell';
+	import type { DomainRecord } from '$lib/types/ipc';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 

@@ -33,7 +33,6 @@
 
 	function handleNavToPlayer() {
 		if (playerState.currentContentId) {
-			// @ts-expect-error - routes are defined by the desktop app, not this library
 			goto(resolve(`/player/${playerState.currentContentId}`));
 		}
 	}

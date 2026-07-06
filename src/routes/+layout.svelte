@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { diag, ShellLayout, ErrorBoundary, updatePlaybackState, getPlayerState, createDomainRegistry, addToast } from '@rymflux/shell';
+	import { diag } from '$lib/utils/diag.svelte';
+	import ShellLayout from '$lib/components/ShellLayout.svelte';
+	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
+	import { updatePlaybackState, getPlayerState } from '$lib/stores/playerStore.svelte';
+	import { createDomainRegistry } from '$lib/registry/index';
+	import { addToast } from '$lib/stores/toastStore.svelte';
 	import { audiobookDomain } from '@rymflux/domain-audiobook';
 	import { TauriAudioEngine } from '$lib/ipc/audioEngine';
 	import { setAudioEngine } from '$lib/ipc/engineContext';

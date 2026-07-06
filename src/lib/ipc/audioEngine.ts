@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { AudioSource, PlaybackState } from '@rymflux/shell';
+import type { AudioSource, PlaybackState } from '$lib/types/ipc';
 import type { ProgressWriteContext } from './progressContext';
 
 export class TauriAudioEngine {

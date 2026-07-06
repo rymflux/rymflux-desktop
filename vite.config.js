@@ -11,11 +11,12 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [tailwindcss(), sveltekit()],
   optimizeDeps: {
-    exclude: ['@rymflux/shell'],
+    exclude: ['@rymflux/domain-audiobook'],
   },
   resolve: {
     alias: {
       '@rymflux/domain-audiobook': path.resolve('../rymflux-audiobook/src/lib'),
+      '@rymflux/shell': path.resolve('./src/lib'),
     },
   },
 
@@ -41,7 +42,6 @@ export default defineConfig(() => ({
     },
     fs: {
       allow: [
-        process.cwd() + '/../rymflux-shell',
         process.cwd() + '/../rymflux-audiobook',
       ],
     },

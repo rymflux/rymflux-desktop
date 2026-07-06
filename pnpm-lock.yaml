@@ -13,10 +13,7 @@ importers:
         version: 1.23.0(svelte@5.56.4)
       '@rymflux/domain-audiobook':
         specifier: file:../rymflux-audiobook
-        version: file:../rymflux-audiobook(@rymflux/shell@file:../rymflux-shell(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4))(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(@tauri-apps/api@2.11.1)(svelte@5.56.4)
-      '@rymflux/shell':
-        specifier: file:../rymflux-shell
-        version: file:../rymflux-shell(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)
+        version: file:../rymflux-audiobook(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(@tauri-apps/api@2.11.1)(svelte@5.56.4)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.11.1
@@ -200,15 +197,8 @@ packages:
   '@rymflux/domain-audiobook@file:../rymflux-audiobook':
     resolution: {directory: ../rymflux-audiobook, type: directory}
     peerDependencies:
-      '@rymflux/shell': ^0.0.1
       '@sveltejs/kit': ^2.0.0
       '@tauri-apps/api': ^2
-      svelte: ^5.0.0
-
-  '@rymflux/shell@file:../rymflux-shell':
-    resolution: {directory: ../rymflux-shell, type: directory}
-    peerDependencies:
-      '@sveltejs/kit': ^2.0.0
       svelte: ^5.0.0
 
   '@standard-schema/spec@1.1.0':
@@ -842,17 +832,10 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rymflux/domain-audiobook@file:../rymflux-audiobook(@rymflux/shell@file:../rymflux-shell(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4))(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(@tauri-apps/api@2.11.1)(svelte@5.56.4)':
+  '@rymflux/domain-audiobook@file:../rymflux-audiobook(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(@tauri-apps/api@2.11.1)(svelte@5.56.4)':
     dependencies:
-      '@rymflux/shell': file:../rymflux-shell(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)
       '@sveltejs/kit': 2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0))
       '@tauri-apps/api': 2.11.1
-      svelte: 5.56.4
-
-  '@rymflux/shell@file:../rymflux-shell(@sveltejs/kit@2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)':
-    dependencies:
-      '@lucide/svelte': 1.23.0(svelte@5.56.4)
-      '@sveltejs/kit': 2.68.0(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.4)(vite@8.1.0(jiti@2.7.0)))(svelte@5.56.4)(typescript@6.0.3)(vite@8.1.0(jiti@2.7.0))
       svelte: 5.56.4
 
   '@standard-schema/spec@1.1.0': {}

@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { diag, getUiState, getPlayerState, setTheme, Icon, toggleDiagMode as toggleFrontendDiagMode } from '@rymflux/shell';
+	import { diag } from '$lib/utils/diag.svelte';
+	import { getUiState, setTheme } from '$lib/stores/uiStore.svelte';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import { toggleDiagMode as toggleFrontendDiagMode } from '$lib/utils/diag.svelte';
 	import { listDomains, countContent, syncProgress, clearLibrary } from '$lib/ipc/library';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { setBackendDiagMode } from '$lib/ipc/diag';
@@ -84,7 +88,7 @@
 		if (!engine) return;
 		const unlisteners: (() => void)[] = [];
 		import('@tauri-apps/api/event').then(({ listen }) => {
-			listen<import('@rymflux/shell').PlaybackState>('audio:progress', (e) => {
+			listen<import('$lib/types/ipc').PlaybackState>('audio:progress', (e) => {
 				eventLog = [...eventLog.slice(-99), { ts: performance.now(), type: 'progress' as const, msg: `pos=${Math.round(e.payload.position_ms / 1000)}s` }];
 			}).then((u) => unlisteners.push(u));
 			listen<void>('audio:finished', () => {

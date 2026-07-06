@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getPlayerState, CoverImage } from '@rymflux/shell';
+	import { getPlayerState } from '$lib/stores/playerStore.svelte';
+	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { syncProgress, getLibraryDetail, listDomains } from '$lib/ipc/library';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { listLibrary, syncProgress } from '$lib/ipc/library';
-	import { getDomainRegistry } from '@rymflux/shell';
+	import { getDomainRegistry } from '$lib/registry/index';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 
 	let { params } = $props();
-	let items = $state<import('@rymflux/shell').DomainItem[]>([]);
+	let items = $state<import('$lib/types/ipc').DomainItem[]>([]);
 	let progressMap = $state<Map<string, number>>(new Map());
 	let loading = $state(true);
 
@@ -27,7 +27,7 @@
 		}
 	});
 
-	function handleSelect(item: import('@rymflux/shell').DomainItem) {
+	function handleSelect(item: import('$lib/types/ipc').DomainItem) {
 		goto(resolve(`/player/${item.content_id}`));
 	}
 

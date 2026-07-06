@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ContentItem, DomainRecord, ProgressRecord, DomainItem } from '@rymflux/shell';
+import type { ContentItem, DomainRecord, ProgressRecord, DomainItem } from '$lib/types/ipc';
 
 /** Store a ContentItem (built by a domain) into the library database. */
 export async function storeItem(

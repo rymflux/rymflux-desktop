@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { diag, CoverImage, LoadingSpinner, getDomainRegistry } from '@rymflux/shell';
-	import type { DomainItem } from '@rymflux/shell';
+	import { diag } from '$lib/utils/diag.svelte';
+	import CoverImage from '$lib/components/CoverImage.svelte';
+	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
+	import { getDomainRegistry } from '$lib/registry/index';
+	import type { DomainItem } from '$lib/types/ipc';
 
 	let query = $state('');
 	let searchType = $state<'title' | 'author'>('title');

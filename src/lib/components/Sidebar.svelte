@@ -31,8 +31,7 @@
 	<nav class="flex-1 px-2 space-y-1">
 		{#each nav as item (item.href)}
 			<a
-				// @ts-expect-error - routes are defined by the desktop app, not this library
-				href={resolve(item.href)}
+			href={resolve(item.href)}
 				class="block px-3 py-2 rounded-lg text-sm transition-colors
 					{$page.url.pathname === item.href ? 'bg-blue-600 text-white' : 'hover:bg-white/5'}"
 				style="color: {$page.url.pathname === item.href ? '' : 'var(--text-secondary)'};"

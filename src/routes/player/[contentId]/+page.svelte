@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { getProgress, getLibraryDetail, removeFromLibrary, storeItem } from '$lib/ipc/library';
-	import { diag, setCurrentTrack, getPlayerState, getDomainRegistry } from '@rymflux/shell';
+	import { diag } from '$lib/utils/diag.svelte';
+	import { setCurrentTrack, getPlayerState } from '$lib/stores/playerStore.svelte';
+	import { getDomainRegistry } from '$lib/registry/index';
 	import { getAudioEngine } from '$lib/ipc/engineContext';
 	import { buildProgressContext } from '$lib/ipc/progressContext';
 	import { onMount } from 'svelte';
-	import type { ChapterInfo } from '@rymflux/shell';
+	import type { ChapterInfo } from '$lib/types/ipc';
 	import { resolve } from '$app/paths';
 
 	let { params } = $props();
@@ -12,7 +14,7 @@
 	let engine = getAudioEngine();
 	let domain = getDomainRegistry().get('audiobook');
 
-	let book = $state<import('@rymflux/shell').CatalogDetail | null>(null);
+	let book = $state<import('$lib/types/ipc').CatalogDetail | null>(null);
 	let savedProgress = $state(0);
 	let loading = $state(true);
 	let adding = $state(false);

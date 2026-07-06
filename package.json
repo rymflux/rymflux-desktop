@@ -15,7 +15,6 @@
   "dependencies": {
     "@lucide/svelte": "^1.23.0",
     "@rymflux/domain-audiobook": "file:../rymflux-audiobook",
-    "@rymflux/shell": "file:../rymflux-shell",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2"
   },
