@@ -1,5 +1,6 @@
 use rymflux_core::audio::PlaybackEngine;
 use rymflux_core::commands;
+use rymflux_core::error::CoreError;
 use rymflux_core::storage::StorageEngine;
 use rymflux_core::types::{
     AudioSource, ContentIdentity, ContentItem, DomainId, DomainRecord, PlaybackState,
@@ -17,11 +18,10 @@ pub fn play_audio(
     source: AudioSource,
     content_id: String,
     position_ms: u64,
-) -> Result<PlaybackState, String> {
-    let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<PlaybackState, CoreError> {
+    let mut engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     commands::playback::play(&storage, &mut engine, &source, &content_id, position_ms)
-        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -32,9 +32,9 @@ pub fn pause_audio(
     content_id: String,
     chapter_index: Option<u32>,
     chapter_offset_ms: Option<u64>,
-) -> Result<PlaybackState, String> {
-    let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<PlaybackState, CoreError> {
+    let mut engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
     let ctx = match (chapter_index, chapter_offset_ms) {
         (Some(index), Some(offset)) => Some(ProgressWriteContext {
@@ -44,7 +44,6 @@ pub fn pause_audio(
         _ => None,
     };
     commands::playback::pause(&storage, &mut engine, &domain, &content_id, ctx.as_ref())
-        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -56,9 +55,9 @@ pub fn seek_audio(
     position_ms: u64,
     chapter_index: Option<u32>,
     chapter_offset_ms: Option<u64>,
-) -> Result<PlaybackState, String> {
-    let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<PlaybackState, CoreError> {
+    let mut engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
     let ctx = match (chapter_index, chapter_offset_ms) {
         (Some(index), Some(offset)) => Some(ProgressWriteContext {
@@ -75,32 +74,31 @@ pub fn seek_audio(
         position_ms,
         ctx.as_ref(),
     )
-    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn set_audio_speed(
     engine_state: tauri::State<'_, Mutex<PlaybackEngine>>,
     rate: f32,
-) -> Result<PlaybackState, String> {
-    let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
-    commands::playback::set_speed(&mut engine, rate).map_err(|e| e.to_string())
+) -> Result<PlaybackState, CoreError> {
+    let mut engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    commands::playback::set_speed(&mut engine, rate)
 }
 
 #[tauri::command]
 pub fn set_audio_volume(
     engine_state: tauri::State<'_, Mutex<PlaybackEngine>>,
     volume: f32,
-) -> Result<PlaybackState, String> {
-    let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<PlaybackState, CoreError> {
+    let mut engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     Ok(commands::playback::set_volume(&mut engine, volume))
 }
 
 #[tauri::command]
 pub fn get_audio_state(
     engine_state: tauri::State<'_, Mutex<PlaybackEngine>>,
-) -> Result<PlaybackState, String> {
-    let engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<PlaybackState, CoreError> {
+    let engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     Ok(commands::playback::get_state(&engine))
 }
 
@@ -112,9 +110,9 @@ pub fn stop_audio(
     content_id: String,
     chapter_index: Option<u32>,
     chapter_offset_ms: Option<u64>,
-) -> Result<PlaybackState, String> {
-    let mut engine = engine_state.inner().lock().map_err(|e| e.to_string())?;
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<PlaybackState, CoreError> {
+    let mut engine = engine_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
     let ctx = match (chapter_index, chapter_offset_ms) {
         (Some(index), Some(offset)) => Some(ProgressWriteContext {
@@ -124,7 +122,6 @@ pub fn stop_audio(
         _ => None,
     };
     commands::playback::stop(&storage, &mut engine, &domain, &content_id, ctx.as_ref())
-        .map_err(|e| e.to_string())
 }
 
 // ── Library ──────────────────────────────────────────────────────────────────
@@ -133,58 +130,55 @@ pub fn stop_audio(
 pub fn library_remove_from(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     content_id: String,
-) -> Result<(), String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-    storage
-        .delete_content(&content_id)
-        .map_err(|e| e.to_string())
+) -> Result<(), CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    storage.delete_content(&content_id)
 }
 
 #[tauri::command]
 pub fn library_clear(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
-) -> Result<(), String> {
+) -> Result<(), CoreError> {
     use rymflux_core::types::DomainId;
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     rymflux_core::commands::library::clear(&storage, &DomainId::from(domain_id.as_str()))
-        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn library_list(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
-) -> Result<Vec<ContentItem>, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<Vec<ContentItem>, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
-    commands::library::list(&storage, &domain, None, None).map_err(|e| e.to_string())
+    commands::library::list(&storage, &domain, None, None)
 }
 
 #[tauri::command]
 pub fn library_list_domains(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
-) -> Result<Vec<DomainRecord>, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-    commands::library::list_domains(&storage).map_err(|e| e.to_string())
+) -> Result<Vec<DomainRecord>, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    commands::library::list_domains(&storage)
 }
 
 #[tauri::command]
 pub fn library_count_content(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
-) -> Result<i64, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<i64, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
-    commands::library::count_by_domain(&storage, &domain).map_err(|e| e.to_string())
+    commands::library::count_by_domain(&storage, &domain)
 }
 
 #[tauri::command]
 pub fn library_count_all(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
-) -> Result<HashMap<String, i64>, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-    commands::library::count_all(&storage).map_err(|e| e.to_string())
+) -> Result<HashMap<String, i64>, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    commands::library::count_all(&storage)
 }
 
 #[tauri::command]
@@ -192,19 +186,19 @@ pub fn library_search(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
     query: String,
-) -> Result<Vec<ContentItem>, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<Vec<ContentItem>, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
-    commands::library::search(&storage, &domain, &query).map_err(|e| e.to_string())
+    commands::library::search(&storage, &domain, &query)
 }
 
 #[tauri::command]
 pub fn library_get_detail(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     content_id: String,
-) -> Result<ContentItem, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-    commands::library::get_detail(&storage, &content_id).map_err(|e| e.to_string())
+) -> Result<ContentItem, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    commands::library::get_detail(&storage, &content_id)
 }
 
 // ── Progress ─────────────────────────────────────────────────────────────────
@@ -213,9 +207,9 @@ pub fn library_get_detail(
 pub fn progress_get(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     content_id: String,
-) -> Result<ProgressRecord, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
-    commands::progress::get(&storage, &content_id).map_err(|e| e.to_string())
+) -> Result<ProgressRecord, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
+    commands::progress::get(&storage, &content_id)
 }
 
 #[tauri::command]
@@ -227,8 +221,8 @@ pub fn progress_set(
     chapter_index: Option<u32>,
     chapter_offset_ms: Option<u64>,
     speed: Option<f32>,
-) -> Result<(), String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<(), CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
     let ctx = match (chapter_index, chapter_offset_ms) {
         (Some(index), Some(offset)) => Some(ProgressWriteContext {
@@ -245,17 +239,16 @@ pub fn progress_set(
         ctx.as_ref(),
         speed,
     )
-    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn progress_sync(
     storage_state: tauri::State<'_, Mutex<StorageEngine>>,
     domain_id: String,
-) -> Result<Vec<ProgressRecord>, String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<Vec<ProgressRecord>, CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let domain = DomainId::from(domain_id);
-    commands::progress::sync(&storage, &domain).map_err(|e| e.to_string())
+    commands::progress::sync(&storage, &domain)
 }
 
 // ── Diagnostics ─────────────────────────────────────────────────────────────
@@ -301,8 +294,8 @@ pub fn library_store_item(
     content_item: ContentItem,
     identity_source_id: String,
     identity_duration_ms: Option<i64>,
-) -> Result<(), String> {
-    let storage = storage_state.inner().lock().map_err(|e| e.to_string())?;
+) -> Result<(), CoreError> {
+    let storage = storage_state.inner().lock().map_err(|e| CoreError::Other(e.to_string()))?;
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default()
@@ -320,11 +313,7 @@ pub fn library_store_item(
         first_seen_at: now.to_string(),
         last_seen_at: now.to_string(),
     };
-    storage
-        .store_identity(&identity)
-        .map_err(|e| e.to_string())?;
-    storage
-        .upsert_content(&content_item)
-        .map_err(|e| e.to_string())?;
+    storage.store_identity(&identity)?;
+    storage.upsert_content(&content_item)?;
     Ok(())
 }

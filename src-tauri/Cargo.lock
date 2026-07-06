@@ -3463,7 +3463,6 @@ version = "0.1.0"
 dependencies = [
  "dirs",
  "reqwest",
- "rusqlite",
  "rymflux-core",
  "serde",
  "serde_json",
